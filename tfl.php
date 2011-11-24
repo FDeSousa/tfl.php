@@ -108,7 +108,7 @@ function processRequest() {
 			$json_out = getStationsList();
 			break;
 		default:
-			die("No request made");
+			die("\n{\"error\":\"No valid request made\"}");
 	}
 
 	return $json_out;
@@ -200,7 +200,7 @@ function getDetailedPredictions() {
 		$filename .= $line;
 	} else {
 		# If not, just kill off execution now
-		die("Invalid line code");
+		die("{\"error\":\"Invalid line code\"}");
 	}
 	# Directory has been named, check if it exists, or create it
 	if (! is_dir($filename)) {
@@ -212,7 +212,7 @@ function getDetailedPredictions() {
 		# Fail fast if the station code is missing
 		$filename .= "/" . $station . FILE_EXTENSION;
 	} else {
-		die("Missing station code");
+		die("{\"error\":\"Missing station code\"}");
 	}
 	# Also make up the URL for the request for later
 	$url = BASE_URL . PREDICTION_DETAILED . "/" . $line . "/" . $station;
@@ -311,7 +311,7 @@ function getSummaryPredictions() {
 		$filename .= "/" . $line . FILE_EXTENSION;
 	} else {
 		# If not, just kill off execution now
-		die("Invalid line code");
+		die("{\"error\":\"Invalid line code\"}");
 	}
 	$url = BASE_URL . PREDICTION_SUMMARY . "/" . $line;
 
