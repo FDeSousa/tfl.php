@@ -4,21 +4,15 @@
 A simple API for getting data from the Transport for London - London Underground (TfLU from now on for my own sanity's sake) feeds in valid JSON format.  
 Data comes from the detailed predictions, summary predictions, line status, station status and stations list feeds, updated at most every thirty seconds (limitation of the TfL data feeds).
 
-***
-
 ## How do I access it?
 ### Basics of it
 Maybe not the nicest, most thoughtful of all systems, but it works alright for now; you can get a data feed from [http://trains.desousa.com.pt/tfl.php](http://trains.desousa.com.pt/tfl.php "Base URL for queries") using PHP URL attributes, valid ones listed below.  
 Alternatively, download the PHP script from the github repo and host it yourself.
 
-***
-
 ## How can I host my own?
 Good question. Get the latest copy of tfl.php here in this github repo.
 Check to make sure there aren't references to any of my own hosting pages (I may not have noticed them) and change those.  
 Otherwise, you're all set, just hit the php script from a web browser, or using a HTTP GET, or whatever else you may fancy using, to query the data feeds or get from the cache.
-
-***
 
 ## Other Information
 For more detailed information, it's best to [view the project's home page.](http://trains.desousa.com.pt)
