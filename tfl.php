@@ -1,5 +1,12 @@
 <?php header('Content-Type: application/json');
 
+/*
+ * tfl.php - TfL API that makes sense
+ * Filipe De Sousa
+ * November 24, 2011
+ * Version 0.1
+ */
+
 /*****************************************************************************************************
  *	Copyright (c) 2011 Filipe De Sousa
  *
