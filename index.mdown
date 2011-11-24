@@ -1,0 +1,580 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<link rel="stylesheet" type="text/css" href="train.css" />
+<title>tfl.php - TfL API that makes sense</title>
+</head>
+<body>
+
+# tfl.php - TfL API that makes sense
+## Introduction
+A simple API for getting data from the Transport for London - London Underground (TfLU from now on for my own sanity's sake) feeds in valid JSON format.  
+Data comes from the detailed predictions, summary predictions, line status, station status and stations list feeds, updated at most every thirty seconds (limitation of the TfL data feeds).
+
+***
+
+## How do I access it?
+### Basics of it
+Maybe not the nicest, most thoughtful of all systems, but it works alright for now; you can get a data feed from [http://trains.desousa.com.pt/tfl.php](http://trains.desousa.com.pt/tfl.php "Base URL for queries") using PHP URL attributes, valid ones listed below.  
+Alternatively, download the PHP script from the github repo and host it yourself.
+
+### Data feed arguments
+There are four attributes that should be provided with the URL depending upon the type of request made:
+
+1.	**request**  
+	Specifies the type of request being made, one of:
+	*	predictiondetailed
+	*	predictionsummary
+	*	linestatus
+	*	stationstatus
+	*	stationslist
+2.	**line**  
+	The TfLU line code character, specific to each line  
+	_N.B._ List of main TfLU lines and stations (currently minus Overground and DLR lines) can be acquired via the Stations List data feed
+3.	**station**  
+	The TfLU train station code string, specific to each station  
+	_N.B._ List of main TfLU lines and stations (currently minus Overground and DLR lines) can be acquired via the Stations List data feed
+4.	**incidents** - _Optional argument_  
+	Any value representing a boolean in PHP, to determine whether to only acquire information on lines/stations with incidents reported
+5.	**timed** - _Optional argument_  
+	Valid for all requests being made. Timed should have a valid PHP boolean value attached. If this value is true, then the script will append how long the script took to execute in seconds
+
+### Data feed argument requirements
+*	**Detailed Predictions** - [Example request](http://trains.desousa.com.pt/tfl.php?request=predictiondetailed&line=c&station=bnk "Querying detailed predictions for Bank on the Central line")  
+	Used for getting detailed predictions for one station on one line, displaying all the trains predicted to arrive within the next 30 minutes, along with other information  
+	Arguments:
+	*	request - required  
+		"request=predictiondetailed"
+	*	line - required  
+		"line=" and line code
+	*	station - required  
+		"station=" and station code
+*	**Summary Predictions** - [Example request](http://trains.desousa.com.pt/tfl.php?request=predictionsummary&line=c "Querying summary predictions for Central line")  
+	Used for getting summary predictions for all stations on one line, displaying all the trains predicted to arrive within the next 30 minutes, along with other information  
+	Arguments:
+	*	request - required  
+		"request=predictionsummary"
+	*	line - required  
+		"line=" and line code
+*	**Line Status** - [Example request](http://trains.desousa.com.pt/tfl.php?request=linestatus&incidents=0 "Querying stations status for all lines")  
+	Used for getting status of all lines, without displaying train predictions, individual station or platform information. Same information as displayed on [TfL homepage](http://tfl.gov.uk)  
+	Optionally return only lines with reported incidents  
+	Arguments:
+	*	request - required  
+		"request=linestatus"
+	*	incidents only - optional  
+		"incidents=" and [any boolean value valid in PHP](http://php.net/manual/en/language.types.boolean.php "PHP Booleans - Manual")
+*	**Station Status** - [Example request](http://trains.desousa.com.pt/tfl.php?request=stationstatus&incidents=0 "Querying stations status for all stations")  
+	Used for getting status of all stations, without displaying train predictions, individual line or platform information.  
+	Optionally return only stations with reported incidents  
+	Arguments:
+	*	request - required  
+		"request=stationstatus"
+	*	incidents only - optional  
+		"incidents=" and [any boolean value valid in PHP](http://php.net/manual/en/language.types.boolean.php "PHP Booleans - Manual")
+*	**Stations List** - [Example request](http://trains.desousa.com.pt/tfl.php?request=stationslist "Querying the stations list feed")  
+	Used for getting list of all lines and stations on them, along with their unique codes. Knowledge of the codes are required for any query of the predictions feeds.  
+	There are no optional arguments, only one required argument for this request:
+	*	request - required  
+		"request=stationslist"
+
+***
+
+## Returned JSON syntax
+The syntax for the JSON replies is derived from the XML syntax, but hopefully slightly more understandable, with slightly easier naming schemes to follow.  
+All sample JSON returned, after being made human-readable (it is normally sent as a one-line string), has been cut down to only a few examples of each array/attribute.
+
+### Detailed Predictions
+
+	{
+	    "requesttype": "Detailed Predictions",
+	    "information": {
+	        "created": "24 Nov 2011 13:06:17",
+	        "linecode": "C",
+	        "linename": "Central Line"
+	    },
+	    "stations": [
+	        {
+	            "stationcode": "BNK",
+	            "stationname": "Bank.",
+	            "platforms": [
+	                {
+	                    "platformname": "Westbound - Platform 5",
+	                    "platformnumber": "5",
+	                    "trains": [
+	                        {
+	                            "lcid": "1071728",
+	                            "secondsto": "136",
+	                            "timeto": "2:30",
+	                            "location": "At Liverpool Street",
+	                            "destination": "West Ruislip",
+	                            "destcode": "547",
+	                            "tripno": "7"
+	                        },
+	                        {
+	                            "lcid": "1066154",
+	                            "secondsto": "260",
+	                            "timeto": "4:30",
+	                            "location": "Between Bethnal Green and Liverpool Street",
+	                            "destination": "Northolt",
+	                            "destcode": "564",
+	                            "tripno": "5"
+	                        }
+	                    ]
+	                },
+	                {
+	                    "platformname": "Eastbound - Platform 6",
+	                    "platformnumber": "6",
+	                    "trains": [
+	                        {
+	                            "lcid": "1064653",
+	                            "secondsto": "0",
+	                            "timeto": "0:30",
+	                            "location": "At Bank",
+	                            "destination": "Epping",
+	                            "destcode": "530",
+	                            "tripno": "5"
+	                        },
+	                        {
+	                            "lcid": "1063487",
+	                            "secondsto": "199",
+	                            "timeto": "3:30",
+	                            "location": "Left Chancery Lane",
+	                            "destination": "Hainault via Newbury Park",
+	                            "destcode": "532",
+	                            "tripno": "6"
+	                        }
+	                    ]
+	                }
+	            ]
+	        }
+	    ]
+	}
+
+*	**requesttype**  
+	Informational entry just to confirm the type of request made
+*	**information**  
+	Informational array, providing data directly from the XML file
+	*	**created**  
+		Original creation date/time of the XML data
+	*	**linecode**  
+		TfLU code of the line queried
+	*	**linename**  
+		Full name of the TfLU line queried
+*	**stations**  
+	Array grouping any and all stations from the query (should only ever contain one within detailed prediction)
+	*	**stationcode**  
+		TfLU code for the station queried
+	*	**stationname**  
+		Full name of the TfLU station queried
+	*	**platforms**  
+		Array grouping all platforms of the station for given line (generally two per station)
+		*	**platformname**  
+			Full name of the platform (generally containing direction and number)
+		*	**platformnumber**  
+			Platform number (not an integer for parsing reasons)
+		*	**trains**  
+			Array grouping trains predicted to arrive at the given platform within the next thirty minutes
+			*	**lcid**  
+				Unique train identifier
+			*	**secondsto**  
+				Predicted number of seconds until the train reaches the platform (0 if at platform)
+			*	**timeto**  
+				Predicted time in minutes and seconds until train reaches platform ('-' if at platform) rounded to nearest 30 seconds
+			*	**location**  
+				The current location of the train ("At Platform" if already at the platform)
+			*	**destination**  
+				Intended destination of the train
+			*	**destcode**  
+				The identifying code of the destination (0 can mean "Unknown"/"Awaiting confirmation", 546 signifies "out of service")
+			*	**tripno**  
+				Number of trips for the train on the day (255 signifies "no trip")
+
+### Summary Predictions
+
+	{
+	    "requesttype": "Summary Predictions",
+	    "created": "2011\/11\/24 18:30:38",
+	    "stations": [
+	        {
+	            "stationcode": "BNK",
+	            "stationname": "Bank.",
+	            "platforms": [
+	                {
+	                    "platformname": "Westbound - Platform 5",
+	                    "platformcode": "0",
+	                    "trains": [
+	                        {
+	                            "trainnumber": "017",
+	                            "tripno": "10",
+	                            "destcode": "547",
+	                            "destination": "West Ruislip",
+	                            "timeto": "1:00",
+	                            "location": "Between Liverpool Street and Bank"
+	                        },
+	                        {
+	                            "trainnumber": "104",
+	                            "tripno": "13",
+	                            "destcode": "562",
+	                            "destination": "Ruislip Gardens",
+	                            "timeto": "3:00",
+	                            "location": "Between Bethnal Green and Liverpool Street"
+	                        }
+	                    ]
+	                },
+	                {
+	                    "platformname": "Eastbound - Platform 6",
+	                    "platformcode": "1",
+	                    "trains": [
+	                        {
+	                            "trainnumber": "050",
+	                            "tripno": "12",
+	                            "destcode": "532",
+	                            "destination": "Hainault via Newbury Park",
+	                            "timeto": "2:00",
+	                            "location": "At St. Paul's"
+	                        },
+	                        {
+	                            "trainnumber": "005",
+	                            "tripno": "9",
+	                            "destcode": "530",
+	                            "destination": "Epping",
+	                            "timeto": "3:30",
+	                            "location": "Left Chancery Lane"
+	                        }
+	                    ]
+	                }
+	            ]
+	        },
+	        {
+	            "stationcode": "BDE",
+	            "stationname": "Barkingside.",
+	            "platforms": [
+	                {
+	                    "platformname": "Outer Rail - Platform 1",
+	                    "platformcode": "1",
+	                    "trains": [
+	                        {
+	                            "trainnumber": "074",
+	                            "tripno": "11",
+	                            "destcode": "548",
+	                            "destination": "Ealing Broadway",
+	                            "timeto": "0:30",
+	                            "location": "Between Fairlop and Barkingside"
+	                        }
+	                    ]
+	                },
+	                {
+	                    "platformname": "Inner Rail - Platform 2",
+	                    "platformcode": "0",
+	                    "trains": [
+	                        {
+	                            "trainnumber": "030",
+	                            "tripno": "8",
+	                            "destcode": "532",
+	                            "destination": "Hainault via Newbury Park",
+	                            "timeto": "1:00",
+	                            "location": "Between Newbury Park and Barkingside"
+	                        },
+	                        {
+	                            "trainnumber": "031",
+	                            "tripno": "9",
+	                            "destcode": "532",
+	                            "destination": "Hainault via Newbury Park",
+	                            "timeto": "2:30",
+	                            "location": "Approaching Newbury Park"
+	                        }
+	                    ]
+	                }
+	            ]
+	        }
+	    ]
+	}
+
+*	**requesttype**  
+	Informational entry just to confirm the type of request made
+*	**created**  
+	Original creation date/time of the XML data
+*	**stations**  
+	Array grouping any and all stations from the query (summary predictions contain all stations on the line)
+	*	**stationcode**  
+		TfLU code for the station queried
+	*	**stationname**  
+		Full name of the TfLU station queried
+	*	**platforms**  
+		Array grouping all platforms of the station for given line (generally two per station)
+		*	**platformname**  
+			Full name of the platform (generally containing direction and number)
+		*	**platformcode**  
+			Code counting from 0 representing the platform
+		*	**trains**  
+			Array grouping trains predicted to arrive at the given platform within the next thirty minutes
+			*	**trainnumber**  
+				Train number of the train (similar to a flight number, but used for the whole day)
+			*	**tripno**  
+				Number of trips for the train on the day (255 signifies "no trip")
+			*	**destcode**  
+				The identifying code of the destination (0 can mean "Unknown"/"Awaiting confirmation", 546 signifies "out of service")
+			*	**destination**  
+				Intended destination of the train
+			*	**timeto**  
+				Predicted time in minutes and seconds until train reaches platform ('-' if at platform) rounded to nearest 30 seconds
+			*	**location**  
+				The current location of the train ("At Platform" if already at the platform)
+
+### Line Status
+
+	{
+	    "requesttype": "Line Status",
+	    "lines": [
+	        {
+	            "id": "0",
+	            "details": "",
+	            "lineid": "1",
+	            "linename": "Bakerloo",
+	            "statusid": "GS",
+	            "status": "GoodService",
+	            "description": "Good Service",
+	            "active": "true"
+	        },
+	        {
+	            "id": "1",
+	            "details": "",
+	            "lineid": "2",
+	            "linename": "Central",
+	            "statusid": "GS",
+	            "status": "GoodService",
+	            "description": "Good Service",
+	            "active": "true"
+	        }
+	    ]
+	}
+
+*	**requesttype**  
+	Informational entry just to confirm the type of request made
+*	**lines**  
+	Array grouping all lines from the query (if the query is for incidents only this may contain no entries)
+	*	**id**  
+		Identifier of the line status
+	*	**details**  
+		Description of the status of the line if the status is not normal, otherwise blank
+	*	**lineid**  
+		Line code identifier
+	*	**linename**  
+		Name of the line
+	*	**statusid**  
+		Two character identifier of the status of the line
+	*	**status**  
+		Text code representing the general status of the line
+	*	**description**  
+		Description of the status of the line
+	*	**active**  
+		Boolean value indicating if status is active (seemingly always true)
+
+The values of lines[statusid, status, description] all reference the same information, displaying them in different ways.
+
+*	statusid displays a two-character representation of the status  
+*	status displays the short message without spaces  
+*	description displays the same message as status, but with spaces  
+
+As there is a certain level of ambiguity as to whether these values will ever reference other values, all three have been included.
+
+### Station Status
+
+	{
+	    "requesttype": "Station Status",
+	    "stations": [
+	        {
+	            "id": "1",
+	            "details": "",
+	            "stationname": "Acton Town",
+	            "statusid": "O",
+	            "status": "Open",
+	            "description": "Open",
+	            "active": "false"
+	        },
+	        {
+	            "id": "2",
+	            "details": "",
+	            "stationname": "Aldgate",
+	            "statusid": "O",
+	            "status": "Open",
+	            "description": "Open",
+	            "active": "false"
+	        },
+	        {
+	            "id": "14",
+	            "details": "To the platforms due to a faulty lift.",
+	            "stationname": "Barking",
+	            "statusid": "NS",
+	            "status": "Closed",
+	            "description": "No Step Free Access",
+	            "active": "true"
+	        },
+	        {
+	            "id": "233",
+	            "details": "To the Northern line until late November due to planned engineering work.",
+	            "stationname": "Tottenham Court Road",
+	            "statusid": "C",
+	            "status": "Closed",
+	            "description": "Closed",
+	            "active": "true"
+	        }
+	    ]
+	}
+
+*	**requesttype**  
+	Informational entry just to confirm the type of request made
+*	**stations**  
+	Array grouping any and all stations from the query (if the query is for incidents only this may contain no entries)
+	*	**id**  
+		Identifier of the station (stations seem to be in alphabetical order)
+	*	**details**  
+		Description of the status of the station if the status is not normal, otherwise blank
+	*	**stationname**  
+		The name of the station
+	*	**statusid**
+		One or two character identifier of the status of the station
+	*	**status**  
+		Text code representing the general status of the station
+	*	**description**  
+		Short description of the status of the station
+	*	**active**  
+		Boolean value indicating if status is active (seemingly always true for an abnormal status)
+
+The values of stations[statusid, status, description] all reference the same information, displaying them in different ways.
+
+*	statusid displays a one- or two-character representation of the status  
+*	status displays whether the station is Open of Closed (Closed even applies to only a part closure)  
+*	description displays a short message with details of what is affected (or Closed if the station itself is closed)
+
+As there is a certain level of ambiguity as to whether these values will ever reference other values, all three have been included.  
+The details value gives a much longer message, providing more useful information.
+
+### Stations List
+
+	{
+	    "requesttype": "Stations List",
+	    "lines": [
+	        {
+	            "linecode": "b",
+	            "linename": "Bakerloo",
+	            "stations": {
+	                "stations": [
+	                    {
+	                        "stationcode": "BST",
+	                        "stationname": "Baker Street."
+	                    },
+	                    {
+	                        "stationcode": "CHX",
+	                        "stationname": "Charing Cross."
+	                    },
+	                    {
+	                        "stationcode": "ERB",
+	                        "stationname": "Edgware Road (Bakerloo)."
+	                    }
+	                ]
+	            }
+	        },
+	        {
+	            "linecode": "c",
+	            "linename": "Central",
+	            "stations": {
+	                "stations": [
+	                    {
+	                        "stationcode": "BNK",
+	                        "stationname": "Bank."
+	                    },
+	                    {
+	                        "stationcode": "BDE",
+	                        "stationname": "Barkingside."
+	                    },
+	                    {
+	                        "stationcode": "BNG",
+	                        "stationname": "Bethnal Green."
+	                    },
+	                    {
+	                        "stationcode": "BDS",
+	                        "stationname": "Bond Street."
+	                    }
+	                ]
+	            }
+	        }
+	    ]
+	}
+
+*	**requesttype**  
+	Informational entry just to confirm the type of request made
+*	**lines**  
+	Array grouping any and all lines from the query
+	*	**linecode**  
+		The unique identifying character for a TfLU train line. Used for queries
+	*	**linename**  
+		The full name of the TfLU train line
+	*	**stations**  
+		Array grouping any and all stations from the query
+		*	**stationcode**  
+			The unique identifying characters for a TfLU train station. Used for queries
+		*	**stationname**  
+			The full name of the TfLU train station
+
+***
+
+## Error codes
+The PHP die() function will be called with a semi-useful error message when something goes awry.  
+The syntax of the messages is simple JSON with only one attribute: `{"error":"message"}`  
+The message portion is currently only one of three possibilities.
+
+*	No valid request made  
+	Displayed when the request argument in the URL is empty or not a valid option
+*	Invalid line code  
+	The line code URL argument is missing or invalid  
+	Thrown when requesting detailed or summary predictions without a valid line code
+*	Missing station code  
+	The station code URL argument is missing when it should be present  
+	Thrown when requesting detailed predictions without a station code
+
+***
+
+## How can I host my own?
+Good question. Get the latest copy of [tfl.php here. (Project on github)](https://github.com/FDeSousa/tfl.php).  
+Check to make sure there aren't references to any of my own hosting pages (I may not have noticed them) and change those.  
+Otherwise, you're all set, just hit the php script from a web browser, or using a HTTP GET, or whatever else you may fancy using, to query the data feeds or get from the cache.
+
+***
+
+## Other Information
+
+### Licensing
+The MIT License
+
+Copyright (c) 2011 Filipe De Sousa
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+### Notes
+I have no affiliation with Transport for London, and only use their publicly accessible feeds. To gain access to them, visit their developer's area: [TfL developer's area](http://www.tfl.gov.uk/businessandpartners/syndication/default.aspx).  
+To use TfL's data and APIs, make sure to register with them.
+
+### Services used
+[JSONLint](http://jsonlint.com) - validating the JSON during testing and making the JSON syntax above more human-readable
+[OpenTFL Wiki](http://wiki.opentfl.co.uk/TrackerNet) - wiki on the TfL feeds and the meanings of various XML tags
+
+<div id="nonFooter">
+<div id="content">
+***
+## About me
+I'm Filipe, recent Computing grad that's just trying to find something to do while looking for work.  
+Visit my main page at [desousa.com.pt](http://desousa.com.pt)
+View my [projects on github](https://github.com/FDeSousa)
+</div>
+</div>
+<div id="footer">
+Email me: <filipe-noidontneedviagrathanks@desousa.com.pt>
+</div>
+
+</body>
+</html>

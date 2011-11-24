@@ -1,0 +1,495 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<link rel="stylesheet" type="text/css" href="train.css" /> <title>tfl.php - TfL API that makes sense</title>
+</head>
+<body>
+
+<h1 id="tfl.php---tfl-api-that-makes-sense">tfl.php - TfL API that makes sense</h1>
+<h2 id="introduction">Introduction</h2>
+<p>A simple API for getting data from the Transport for London - London Underground (TfLU from now on for my own sanity's sake) feeds in valid JSON format.<br />Data comes from the detailed predictions, summary predictions, line status, station status and stations list feeds, updated at most every thirty seconds (limitation of the TfL data feeds).</p>
+<hr />
+<h2 id="how-do-i-access-it">How do I access it?</h2>
+<h3 id="basics-of-it">Basics of it</h3>
+<p>Maybe not the nicest, most thoughtful of all systems, but it works alright for now; you can get a data feed from <a href="http://trains.desousa.com.pt/tfl.php" title="Base URL for queries">http://trains.desousa.com.pt/tfl.php</a> using PHP URL attributes, valid ones listed below.<br />Alternatively, download the PHP script from the github repo and host it yourself.</p>
+<h3 id="data-feed-arguments">Data feed arguments</h3>
+<p>There are four attributes that should be provided with the URL depending upon the type of request made:</p>
+<ol type="1">
+<li><strong>request</strong><br /> Specifies the type of request being made, one of:
+<ul>
+<li>predictiondetailed</li>
+<li>predictionsummary</li>
+<li>linestatus</li>
+<li>stationstatus</li>
+<li>stationslist</li>
+</ul></li>
+<li><strong>line</strong><br /> The TfLU line code character, specific to each line<br /> <em>N.B.</em> List of main TfLU lines and stations (currently minus Overground and DLR lines) can be acquired via the Stations List data feed</li>
+<li><strong>station</strong><br /> The TfLU train station code string, specific to each station<br /> <em>N.B.</em> List of main TfLU lines and stations (currently minus Overground and DLR lines) can be acquired via the Stations List data feed</li>
+<li><strong>incidents</strong> - <em>Optional argument</em><br /> Any value representing a boolean in PHP, to determine whether to only acquire information on lines/stations with incidents reported</li>
+<li><strong>timed</strong> - <em>Optional argument</em><br /> Valid for all requests being made. Timed should have a valid PHP boolean value attached. If this value is true, then the script will append how long the script took to execute in seconds</li>
+</ol>
+<h3 id="data-feed-argument-requirements">Data feed argument requirements</h3>
+<ul>
+<li><strong>Detailed Predictions</strong> - <a href="http://trains.desousa.com.pt/tfl.php?request=predictiondetailed&amp;line=c&amp;station=bnk" title="Querying detailed predictions for Bank on the Central line">Example request</a><br /> Used for getting detailed predictions for one station on one line, displaying all the trains predicted to arrive within the next 30 minutes, along with other information<br /> Arguments:
+<ul>
+<li>request - required<br /> &quot;request=predictiondetailed&quot;</li>
+<li>line - required<br /> &quot;line=&quot; and line code</li>
+<li>station - required<br /> &quot;station=&quot; and station code</li>
+</ul></li>
+<li><strong>Summary Predictions</strong> - <a href="http://trains.desousa.com.pt/tfl.php?request=predictionsummary&amp;line=c" title="Querying summary predictions for Central line">Example request</a><br /> Used for getting summary predictions for all stations on one line, displaying all the trains predicted to arrive within the next 30 minutes, along with other information<br /> Arguments:
+<ul>
+<li>request - required<br /> &quot;request=predictionsummary&quot;</li>
+<li>line - required<br /> &quot;line=&quot; and line code</li>
+</ul></li>
+<li><strong>Line Status</strong> - <a href="http://trains.desousa.com.pt/tfl.php?request=linestatus&amp;incidents=0" title="Querying stations status for all lines">Example request</a><br /> Used for getting status of all lines, without displaying train predictions, individual station or platform information. Same information as displayed on <a href="http://tfl.gov.uk">TfL homepage</a><br /> Optionally return only lines with reported incidents<br /> Arguments:
+<ul>
+<li>request - required<br /> &quot;request=linestatus&quot;</li>
+<li>incidents only - optional<br /> &quot;incidents=&quot; and <a href="http://php.net/manual/en/language.types.boolean.php" title="PHP Booleans - Manual">any boolean value valid in PHP</a></li>
+</ul></li>
+<li><strong>Station Status</strong> - <a href="http://trains.desousa.com.pt/tfl.php?request=stationstatus&amp;incidents=0" title="Querying stations status for all stations">Example request</a><br /> Used for getting status of all stations, without displaying train predictions, individual line or platform information.<br /> Optionally return only stations with reported incidents<br /> Arguments:
+<ul>
+<li>request - required<br /> &quot;request=stationstatus&quot;</li>
+<li>incidents only - optional<br /> &quot;incidents=&quot; and <a href="http://php.net/manual/en/language.types.boolean.php" title="PHP Booleans - Manual">any boolean value valid in PHP</a></li>
+</ul></li>
+<li><strong>Stations List</strong> - <a href="http://trains.desousa.com.pt/tfl.php?request=stationslist" title="Querying the stations list feed">Example request</a><br /> Used for getting list of all lines and stations on them, along with their unique codes. Knowledge of the codes are required for any query of the predictions feeds.<br /> There are no optional arguments, only one required argument for this request:
+<ul>
+<li>request - required<br /> &quot;request=stationslist&quot;</li>
+</ul></li>
+</ul>
+<hr />
+<h2 id="returned-json-syntax">Returned JSON syntax</h2>
+<p>The syntax for the JSON replies is derived from the XML syntax, but hopefully slightly more understandable, with slightly easier naming schemes to follow.<br />All sample JSON returned, after being made human-readable (it is normally sent as a one-line string), has been cut down to only a few examples of each array/attribute.</p>
+<h3 id="detailed-predictions">Detailed Predictions</h3>
+<pre><code>{
+    &quot;requesttype&quot;: &quot;Detailed Predictions&quot;,
+    &quot;information&quot;: {
+        &quot;created&quot;: &quot;24 Nov 2011 13:06:17&quot;,
+        &quot;linecode&quot;: &quot;C&quot;,
+        &quot;linename&quot;: &quot;Central Line&quot;
+    },
+    &quot;stations&quot;: [
+        {
+            &quot;stationcode&quot;: &quot;BNK&quot;,
+            &quot;stationname&quot;: &quot;Bank.&quot;,
+            &quot;platforms&quot;: [
+                {
+                    &quot;platformname&quot;: &quot;Westbound - Platform 5&quot;,
+                    &quot;platformnumber&quot;: &quot;5&quot;,
+                    &quot;trains&quot;: [
+                        {
+                            &quot;lcid&quot;: &quot;1071728&quot;,
+                            &quot;secondsto&quot;: &quot;136&quot;,
+                            &quot;timeto&quot;: &quot;2:30&quot;,
+                            &quot;location&quot;: &quot;At Liverpool Street&quot;,
+                            &quot;destination&quot;: &quot;West Ruislip&quot;,
+                            &quot;destcode&quot;: &quot;547&quot;,
+                            &quot;tripno&quot;: &quot;7&quot;
+                        },
+                        {
+                            &quot;lcid&quot;: &quot;1066154&quot;,
+                            &quot;secondsto&quot;: &quot;260&quot;,
+                            &quot;timeto&quot;: &quot;4:30&quot;,
+                            &quot;location&quot;: &quot;Between Bethnal Green and Liverpool Street&quot;,
+                            &quot;destination&quot;: &quot;Northolt&quot;,
+                            &quot;destcode&quot;: &quot;564&quot;,
+                            &quot;tripno&quot;: &quot;5&quot;
+                        }
+                    ]
+                },
+                {
+                    &quot;platformname&quot;: &quot;Eastbound - Platform 6&quot;,
+                    &quot;platformnumber&quot;: &quot;6&quot;,
+                    &quot;trains&quot;: [
+                        {
+                            &quot;lcid&quot;: &quot;1064653&quot;,
+                            &quot;secondsto&quot;: &quot;0&quot;,
+                            &quot;timeto&quot;: &quot;0:30&quot;,
+                            &quot;location&quot;: &quot;At Bank&quot;,
+                            &quot;destination&quot;: &quot;Epping&quot;,
+                            &quot;destcode&quot;: &quot;530&quot;,
+                            &quot;tripno&quot;: &quot;5&quot;
+                        },
+                        {
+                            &quot;lcid&quot;: &quot;1063487&quot;,
+                            &quot;secondsto&quot;: &quot;199&quot;,
+                            &quot;timeto&quot;: &quot;3:30&quot;,
+                            &quot;location&quot;: &quot;Left Chancery Lane&quot;,
+                            &quot;destination&quot;: &quot;Hainault via Newbury Park&quot;,
+                            &quot;destcode&quot;: &quot;532&quot;,
+                            &quot;tripno&quot;: &quot;6&quot;
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
+</code></pre>
+<ul>
+<li><strong>requesttype</strong><br /> Informational entry just to confirm the type of request made</li>
+<li><strong>information</strong><br /> Informational array, providing data directly from the XML file
+<ul>
+<li><strong>created</strong><br /> Original creation date/time of the XML data</li>
+<li><strong>linecode</strong><br /> TfLU code of the line queried</li>
+<li><strong>linename</strong><br /> Full name of the TfLU line queried</li>
+</ul></li>
+<li><strong>stations</strong><br /> Array grouping any and all stations from the query (should only ever contain one within detailed prediction)
+<ul>
+<li><strong>stationcode</strong><br /> TfLU code for the station queried</li>
+<li><strong>stationname</strong><br /> Full name of the TfLU station queried</li>
+<li><strong>platforms</strong><br /> Array grouping all platforms of the station for given line (generally two per station)
+<ul>
+<li><strong>platformname</strong><br /> Full name of the platform (generally containing direction and number)</li>
+<li><strong>platformnumber</strong><br /> Platform number (not an integer for parsing reasons)</li>
+<li><strong>trains</strong><br /> Array grouping trains predicted to arrive at the given platform within the next thirty minutes
+<ul>
+<li><strong>lcid</strong><br /> Unique train identifier</li>
+<li><strong>secondsto</strong><br /> Predicted number of seconds until the train reaches the platform (0 if at platform)</li>
+<li><strong>timeto</strong><br /> Predicted time in minutes and seconds until train reaches platform ('-' if at platform) rounded to nearest 30 seconds</li>
+<li><strong>location</strong><br /> The current location of the train (&quot;At Platform&quot; if already at the platform)</li>
+<li><strong>destination</strong><br /> Intended destination of the train</li>
+<li><strong>destcode</strong><br /> The identifying code of the destination (0 can mean &quot;Unknown&quot;/&quot;Awaiting confirmation&quot;, 546 signifies &quot;out of service&quot;)</li>
+<li><strong>tripno</strong><br /> Number of trips for the train on the day (255 signifies &quot;no trip&quot;)</li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+<h3 id="summary-predictions">Summary Predictions</h3>
+<pre><code>{
+    &quot;requesttype&quot;: &quot;Summary Predictions&quot;,
+    &quot;created&quot;: &quot;2011\/11\/24 18:30:38&quot;,
+    &quot;stations&quot;: [
+        {
+            &quot;stationcode&quot;: &quot;BNK&quot;,
+            &quot;stationname&quot;: &quot;Bank.&quot;,
+            &quot;platforms&quot;: [
+                {
+                    &quot;platformname&quot;: &quot;Westbound - Platform 5&quot;,
+                    &quot;platformcode&quot;: &quot;0&quot;,
+                    &quot;trains&quot;: [
+                        {
+                            &quot;trainnumber&quot;: &quot;017&quot;,
+                            &quot;tripno&quot;: &quot;10&quot;,
+                            &quot;destcode&quot;: &quot;547&quot;,
+                            &quot;destination&quot;: &quot;West Ruislip&quot;,
+                            &quot;timeto&quot;: &quot;1:00&quot;,
+                            &quot;location&quot;: &quot;Between Liverpool Street and Bank&quot;
+                        },
+                        {
+                            &quot;trainnumber&quot;: &quot;104&quot;,
+                            &quot;tripno&quot;: &quot;13&quot;,
+                            &quot;destcode&quot;: &quot;562&quot;,
+                            &quot;destination&quot;: &quot;Ruislip Gardens&quot;,
+                            &quot;timeto&quot;: &quot;3:00&quot;,
+                            &quot;location&quot;: &quot;Between Bethnal Green and Liverpool Street&quot;
+                        }
+                    ]
+                },
+                {
+                    &quot;platformname&quot;: &quot;Eastbound - Platform 6&quot;,
+                    &quot;platformcode&quot;: &quot;1&quot;,
+                    &quot;trains&quot;: [
+                        {
+                            &quot;trainnumber&quot;: &quot;050&quot;,
+                            &quot;tripno&quot;: &quot;12&quot;,
+                            &quot;destcode&quot;: &quot;532&quot;,
+                            &quot;destination&quot;: &quot;Hainault via Newbury Park&quot;,
+                            &quot;timeto&quot;: &quot;2:00&quot;,
+                            &quot;location&quot;: &quot;At St. Paul's&quot;
+                        },
+                        {
+                            &quot;trainnumber&quot;: &quot;005&quot;,
+                            &quot;tripno&quot;: &quot;9&quot;,
+                            &quot;destcode&quot;: &quot;530&quot;,
+                            &quot;destination&quot;: &quot;Epping&quot;,
+                            &quot;timeto&quot;: &quot;3:30&quot;,
+                            &quot;location&quot;: &quot;Left Chancery Lane&quot;
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            &quot;stationcode&quot;: &quot;BDE&quot;,
+            &quot;stationname&quot;: &quot;Barkingside.&quot;,
+            &quot;platforms&quot;: [
+                {
+                    &quot;platformname&quot;: &quot;Outer Rail - Platform 1&quot;,
+                    &quot;platformcode&quot;: &quot;1&quot;,
+                    &quot;trains&quot;: [
+                        {
+                            &quot;trainnumber&quot;: &quot;074&quot;,
+                            &quot;tripno&quot;: &quot;11&quot;,
+                            &quot;destcode&quot;: &quot;548&quot;,
+                            &quot;destination&quot;: &quot;Ealing Broadway&quot;,
+                            &quot;timeto&quot;: &quot;0:30&quot;,
+                            &quot;location&quot;: &quot;Between Fairlop and Barkingside&quot;
+                        }
+                    ]
+                },
+                {
+                    &quot;platformname&quot;: &quot;Inner Rail - Platform 2&quot;,
+                    &quot;platformcode&quot;: &quot;0&quot;,
+                    &quot;trains&quot;: [
+                        {
+                            &quot;trainnumber&quot;: &quot;030&quot;,
+                            &quot;tripno&quot;: &quot;8&quot;,
+                            &quot;destcode&quot;: &quot;532&quot;,
+                            &quot;destination&quot;: &quot;Hainault via Newbury Park&quot;,
+                            &quot;timeto&quot;: &quot;1:00&quot;,
+                            &quot;location&quot;: &quot;Between Newbury Park and Barkingside&quot;
+                        },
+                        {
+                            &quot;trainnumber&quot;: &quot;031&quot;,
+                            &quot;tripno&quot;: &quot;9&quot;,
+                            &quot;destcode&quot;: &quot;532&quot;,
+                            &quot;destination&quot;: &quot;Hainault via Newbury Park&quot;,
+                            &quot;timeto&quot;: &quot;2:30&quot;,
+                            &quot;location&quot;: &quot;Approaching Newbury Park&quot;
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
+</code></pre>
+<ul>
+<li><strong>requesttype</strong><br /> Informational entry just to confirm the type of request made</li>
+<li><strong>created</strong><br /> Original creation date/time of the XML data</li>
+<li><strong>stations</strong><br /> Array grouping any and all stations from the query (summary predictions contain all stations on the line)
+<ul>
+<li><strong>stationcode</strong><br /> TfLU code for the station queried</li>
+<li><strong>stationname</strong><br /> Full name of the TfLU station queried</li>
+<li><strong>platforms</strong><br /> Array grouping all platforms of the station for given line (generally two per station)
+<ul>
+<li><strong>platformname</strong><br /> Full name of the platform (generally containing direction and number)</li>
+<li><strong>platformcode</strong><br /> Code counting from 0 representing the platform</li>
+<li><strong>trains</strong><br /> Array grouping trains predicted to arrive at the given platform within the next thirty minutes
+<ul>
+<li><strong>trainnumber</strong><br /> Train number of the train (similar to a flight number, but used for the whole day)</li>
+<li><strong>tripno</strong><br /> Number of trips for the train on the day (255 signifies &quot;no trip&quot;)</li>
+<li><strong>destcode</strong><br /> The identifying code of the destination (0 can mean &quot;Unknown&quot;/&quot;Awaiting confirmation&quot;, 546 signifies &quot;out of service&quot;)</li>
+<li><strong>destination</strong><br /> Intended destination of the train</li>
+<li><strong>timeto</strong><br /> Predicted time in minutes and seconds until train reaches platform ('-' if at platform) rounded to nearest 30 seconds</li>
+<li><strong>location</strong><br /> The current location of the train (&quot;At Platform&quot; if already at the platform)</li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+<h3 id="line-status">Line Status</h3>
+<pre><code>{
+    &quot;requesttype&quot;: &quot;Line Status&quot;,
+    &quot;lines&quot;: [
+        {
+            &quot;id&quot;: &quot;0&quot;,
+            &quot;details&quot;: &quot;&quot;,
+            &quot;lineid&quot;: &quot;1&quot;,
+            &quot;linename&quot;: &quot;Bakerloo&quot;,
+            &quot;statusid&quot;: &quot;GS&quot;,
+            &quot;status&quot;: &quot;GoodService&quot;,
+            &quot;description&quot;: &quot;Good Service&quot;,
+            &quot;active&quot;: &quot;true&quot;
+        },
+        {
+            &quot;id&quot;: &quot;1&quot;,
+            &quot;details&quot;: &quot;&quot;,
+            &quot;lineid&quot;: &quot;2&quot;,
+            &quot;linename&quot;: &quot;Central&quot;,
+            &quot;statusid&quot;: &quot;GS&quot;,
+            &quot;status&quot;: &quot;GoodService&quot;,
+            &quot;description&quot;: &quot;Good Service&quot;,
+            &quot;active&quot;: &quot;true&quot;
+        }
+    ]
+}
+</code></pre>
+<ul>
+<li><strong>requesttype</strong><br /> Informational entry just to confirm the type of request made</li>
+<li><strong>lines</strong><br /> Array grouping all lines from the query (if the query is for incidents only this may contain no entries)
+<ul>
+<li><strong>id</strong><br /> Identifier of the line status</li>
+<li><strong>details</strong><br /> Description of the status of the line if the status is not normal, otherwise blank</li>
+<li><strong>lineid</strong><br /> Line code identifier</li>
+<li><strong>linename</strong><br /> Name of the line</li>
+<li><strong>statusid</strong><br /> Two character identifier of the status of the line</li>
+<li><strong>status</strong><br /> Text code representing the general status of the line</li>
+<li><strong>description</strong><br /> Description of the status of the line</li>
+<li><strong>active</strong><br /> Boolean value indicating if status is active (seemingly always true)</li>
+</ul></li>
+</ul>
+<p>The values of lines[statusid, status, description] all reference the same information, displaying them in different ways.</p>
+<ul>
+<li>statusid displays a two-character representation of the status<br /></li>
+<li>status displays the short message without spaces<br /></li>
+<li>description displays the same message as status, but with spaces</li>
+</ul>
+<p>As there is a certain level of ambiguity as to whether these values will ever reference other values, all three have been included.</p>
+<h3 id="station-status">Station Status</h3>
+<pre><code>{
+    &quot;requesttype&quot;: &quot;Station Status&quot;,
+    &quot;stations&quot;: [
+        {
+            &quot;id&quot;: &quot;1&quot;,
+            &quot;details&quot;: &quot;&quot;,
+            &quot;stationname&quot;: &quot;Acton Town&quot;,
+            &quot;statusid&quot;: &quot;O&quot;,
+            &quot;status&quot;: &quot;Open&quot;,
+            &quot;description&quot;: &quot;Open&quot;,
+            &quot;active&quot;: &quot;false&quot;
+        },
+        {
+            &quot;id&quot;: &quot;2&quot;,
+            &quot;details&quot;: &quot;&quot;,
+            &quot;stationname&quot;: &quot;Aldgate&quot;,
+            &quot;statusid&quot;: &quot;O&quot;,
+            &quot;status&quot;: &quot;Open&quot;,
+            &quot;description&quot;: &quot;Open&quot;,
+            &quot;active&quot;: &quot;false&quot;
+        },
+        {
+            &quot;id&quot;: &quot;14&quot;,
+            &quot;details&quot;: &quot;To the platforms due to a faulty lift.&quot;,
+            &quot;stationname&quot;: &quot;Barking&quot;,
+            &quot;statusid&quot;: &quot;NS&quot;,
+            &quot;status&quot;: &quot;Closed&quot;,
+            &quot;description&quot;: &quot;No Step Free Access&quot;,
+            &quot;active&quot;: &quot;true&quot;
+        },
+        {
+            &quot;id&quot;: &quot;233&quot;,
+            &quot;details&quot;: &quot;To the Northern line until late November due to planned engineering work.&quot;,
+            &quot;stationname&quot;: &quot;Tottenham Court Road&quot;,
+            &quot;statusid&quot;: &quot;C&quot;,
+            &quot;status&quot;: &quot;Closed&quot;,
+            &quot;description&quot;: &quot;Closed&quot;,
+            &quot;active&quot;: &quot;true&quot;
+        }
+    ]
+}
+</code></pre>
+<ul>
+<li><strong>requesttype</strong><br /> Informational entry just to confirm the type of request made</li>
+<li><strong>stations</strong><br /> Array grouping any and all stations from the query (if the query is for incidents only this may contain no entries)
+<ul>
+<li><strong>id</strong><br /> Identifier of the station (stations seem to be in alphabetical order)</li>
+<li><strong>details</strong><br /> Description of the status of the station if the status is not normal, otherwise blank</li>
+<li><strong>stationname</strong><br /> The name of the station</li>
+<li><strong>statusid</strong> One or two character identifier of the status of the station</li>
+<li><strong>status</strong><br /> Text code representing the general status of the station</li>
+<li><strong>description</strong><br /> Short description of the status of the station</li>
+<li><strong>active</strong><br /> Boolean value indicating if status is active (seemingly always true for an abnormal status)</li>
+</ul></li>
+</ul>
+<p>The values of stations[statusid, status, description] all reference the same information, displaying them in different ways.</p>
+<ul>
+<li>statusid displays a one- or two-character representation of the status<br /></li>
+<li>status displays whether the station is Open of Closed (Closed even applies to only a part closure)<br /></li>
+<li>description displays a short message with details of what is affected (or Closed if the station itself is closed)</li>
+</ul>
+<p>As there is a certain level of ambiguity as to whether these values will ever reference other values, all three have been included.<br />The details value gives a much longer message, providing more useful information.</p>
+<h3 id="stations-list">Stations List</h3>
+<pre><code>{
+    &quot;requesttype&quot;: &quot;Stations List&quot;,
+    &quot;lines&quot;: [
+        {
+            &quot;linecode&quot;: &quot;b&quot;,
+            &quot;linename&quot;: &quot;Bakerloo&quot;,
+            &quot;stations&quot;: {
+                &quot;stations&quot;: [
+                    {
+                        &quot;stationcode&quot;: &quot;BST&quot;,
+                        &quot;stationname&quot;: &quot;Baker Street.&quot;
+                    },
+                    {
+                        &quot;stationcode&quot;: &quot;CHX&quot;,
+                        &quot;stationname&quot;: &quot;Charing Cross.&quot;
+                    },
+                    {
+                        &quot;stationcode&quot;: &quot;ERB&quot;,
+                        &quot;stationname&quot;: &quot;Edgware Road (Bakerloo).&quot;
+                    }
+                ]
+            }
+        },
+        {
+            &quot;linecode&quot;: &quot;c&quot;,
+            &quot;linename&quot;: &quot;Central&quot;,
+            &quot;stations&quot;: {
+                &quot;stations&quot;: [
+                    {
+                        &quot;stationcode&quot;: &quot;BNK&quot;,
+                        &quot;stationname&quot;: &quot;Bank.&quot;
+                    },
+                    {
+                        &quot;stationcode&quot;: &quot;BDE&quot;,
+                        &quot;stationname&quot;: &quot;Barkingside.&quot;
+                    },
+                    {
+                        &quot;stationcode&quot;: &quot;BNG&quot;,
+                        &quot;stationname&quot;: &quot;Bethnal Green.&quot;
+                    },
+                    {
+                        &quot;stationcode&quot;: &quot;BDS&quot;,
+                        &quot;stationname&quot;: &quot;Bond Street.&quot;
+                    }
+                ]
+            }
+        }
+    ]
+}
+</code></pre>
+<ul>
+<li><strong>requesttype</strong><br /> Informational entry just to confirm the type of request made</li>
+<li><strong>lines</strong><br /> Array grouping any and all lines from the query
+<ul>
+<li><strong>linecode</strong><br /> The unique identifying character for a TfLU train line. Used for queries</li>
+<li><strong>linename</strong><br /> The full name of the TfLU train line</li>
+<li><strong>stations</strong><br /> Array grouping any and all stations from the query
+<ul>
+<li><strong>stationcode</strong><br /> The unique identifying characters for a TfLU train station. Used for queries</li>
+<li><strong>stationname</strong><br /> The full name of the TfLU train station</li>
+</ul></li>
+</ul></li>
+</ul>
+<hr />
+<h2 id="error-codes">Error codes</h2>
+<p>The PHP die() function will be called with a semi-useful error message when something goes awry.<br />The syntax of the messages is simple JSON with only one attribute: <code>{&quot;error&quot;:&quot;message&quot;}</code><br />The message portion is currently only one of three possibilities.</p>
+<ul>
+<li>No valid request made<br /> Displayed when the request argument in the URL is empty or not a valid option</li>
+<li>Invalid line code<br /> The line code URL argument is missing or invalid<br /> Thrown when requesting detailed or summary predictions without a valid line code</li>
+<li>Missing station code<br /> The station code URL argument is missing when it should be present<br /> Thrown when requesting detailed predictions without a station code</li>
+</ul>
+<hr />
+<h2 id="how-can-i-host-my-own">How can I host my own?</h2>
+<p>Good question. Get the latest copy of <a href="https://github.com/FDeSousa/tfl.php">tfl.php here. (Project on github)</a>.<br />Check to make sure there aren't references to any of my own hosting pages (I may not have noticed them) and change those.<br />Otherwise, you're all set, just hit the php script from a web browser, or using a HTTP GET, or whatever else you may fancy using, to query the data feeds or get from the cache.</p>
+<hr />
+<h2 id="other-information">Other Information</h2>
+<h3 id="licensing">Licensing</h3>
+<p>The MIT License</p>
+<p>Copyright (c) 2011 Filipe De Sousa</p>
+<p>Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the &quot;Software&quot;), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:</p>
+<p>The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.</p>
+<p>THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</p>
+<h3 id="notes">Notes</h3>
+<p>I have no affiliation with Transport for London, and only use their publicly accessible feeds. To gain access to them, visit their developer's area: <a href="http://www.tfl.gov.uk/businessandpartners/syndication/default.aspx">TfL developer's area</a>.<br />To use TfL's data and APIs, make sure to register with them.</p>
+<h3 id="services-used">Services used</h3>
+<p><a href="http://jsonlint.com">JSONLint</a> - validating the JSON during testing and making the JSON syntax above more human-readable <a href="http://wiki.opentfl.co.uk/TrackerNet">OpenTFL Wiki</a> - wiki on the TfL feeds and the meanings of various XML tags</p>
+<div id="nonFooter">
+<div id="content">
+<hr />
+<h2 id="about-me">About me</h2>
+I'm Filipe, recent Computing grad that's just trying to find something to do while looking for work.<br />Visit my main page at <a href="http://desousa.com.pt">desousa.com.pt</a> View my <a href="https://github.com/FDeSousa">projects on github</a>
+</div>
+</div>
+<div id="footer">
+Email me: <script type="text/javascript">
+<!--
+h='&#100;&#x65;&#x73;&#x6f;&#x75;&#x73;&#x61;&#46;&#x63;&#x6f;&#x6d;&#46;&#112;&#116;';a='&#64;';n='&#102;&#x69;&#108;&#x69;&#112;&#x65;&#x2d;&#110;&#x6f;&#x69;&#100;&#x6f;&#110;&#116;&#110;&#x65;&#x65;&#100;&#118;&#x69;&#x61;&#x67;&#114;&#x61;&#116;&#104;&#x61;&#110;&#x6b;&#x73;';e=n+a+h;
+document.write('<a h'+'ref'+'="ma'+'ilto'+':'+e+'">'+'<code>'+e+'</code>'+'<\/'+'a'+'>');
+// -->
+</script><noscript>&#102;&#x69;&#108;&#x69;&#112;&#x65;&#x2d;&#110;&#x6f;&#x69;&#100;&#x6f;&#110;&#116;&#110;&#x65;&#x65;&#100;&#118;&#x69;&#x61;&#x67;&#114;&#x61;&#116;&#104;&#x61;&#110;&#x6b;&#x73;&#32;&#x61;&#116;&#32;&#100;&#x65;&#x73;&#x6f;&#x75;&#x73;&#x61;&#32;&#100;&#x6f;&#116;&#32;&#x63;&#x6f;&#x6d;&#32;&#100;&#x6f;&#116;&#32;&#112;&#116;</noscript>
+</div>
+
+</body>
+</html>
+

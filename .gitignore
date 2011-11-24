@@ -3,12 +3,6 @@ predictiondetailed
 predictionsummary
 stationslist
 
-tfl-old.php
-
 *.json
-*.mdown
-*.htm
-*.html
-*.css
 
 .DS_Store
