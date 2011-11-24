@@ -7,3 +7,5 @@ tfl-old.php
 
 *.json
 *.mdown
+
+.DS_Store
