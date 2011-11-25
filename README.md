@@ -12,7 +12,7 @@ Alternatively, download the PHP script from the github repo and host it yourself
 ## How can I host my own?
 Good question. Get the latest copy of tfl.php here in this github repo.
 Check to make sure there aren't references to any of my own hosting pages (I may not have noticed them) and change those.  
-Otherwise, you're all set, just hit the php script from a web browser, or using a HTTP GET, or whatever else you may fancy using, to query the data feeds or get from the cache.
+Otherwise, you're all set, just hit the script from a web browser, or using a HTTP GET, or whatever else you may fancy using, to query the data feeds or get from the cache.
 
 ## Other Information
 For more detailed information, it's best to [view the project's home page.](http://trains.desousa.com.pt)
@@ -29,5 +29,6 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ### Notes
-I have no affiliation with Transport for London, and only use their publicly accessible feeds. To gain access to them, visit their developer's area: [TfL developer's area](http://www.tfl.gov.uk/businessandpartners/syndication/default.aspx).  
+I have no affiliation with Transport for London, and only use their publicly accessible feeds.  
+To gain access to them, visit their developer's area: [TfL developer's area](http://www.tfl.gov.uk/businessandpartners/syndication/default.aspx).  
 To use TfL's data and APIs, make sure to register with them.
