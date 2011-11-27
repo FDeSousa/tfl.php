@@ -4,7 +4,7 @@
  * tfl.php - TfL API that makes sense
  * Filipe De Sousa
  * November 24, 2011
- * Version 0.1.1
+ * Version 0.1.5
  */
 
 /*****************************************************************************************************
@@ -29,7 +29,7 @@
 # --------------------------------------------------------------------------------
 # Declarations area below
 $starttime = microtime(true);
-# Declaring some useful values for later use
+# Declaring some useful constants
 # For use in parsing the URL this script was executed from:
 define("REQUEST", "request");
 define("LINE", "line");
@@ -55,6 +55,7 @@ define("BASE_URL", "http://cloud.tfl.gov.uk/trackernet/");
 define("BASE_FILE", "./");
 # Default file extension to write file with
 define("FILE_EXTENSION", ".json");
+
 # For stats of stations list, have the list of train lines here
 $lines_list = array("b" => "Bakerloo",
 					"c" => "Central",
@@ -77,24 +78,24 @@ $timed = (bool) $_GET["timed"];
 # Declarations area finished
 # --------------------------------------------------------------------------------
 # Command execution area
-echo processRequest();
-# Processing time was previously tacked on as string, but made for invalid JSON
-# Unfortunately, the real side-effect is that the program caches the timing data
-# too, so now cached requests state they took the same time as fresh requests
+
+# Just execute our main function and be done with it
+main();
 
 # Takes just one line to get the program started fetching/parsing requests
 # --------------------------------------------------------------------------------
 # Functions area, beware! Dragons ahead!
 
 /**
- * Convenience method to determine the request type, return the output from the
- * parsing of XML to JSON in a string
- * @return string - JSON string result
+ * Main method, determines the request type, echoes the output from the
+ * parsing of XML to JSON string
+ * @return null
  * @author Filipe De Sousa
- * @version 0.1
+ * @version 0.1.3
  **/
-function processRequest() {
-	global $request;
+function main() {
+	# Get some global variables
+	global $request, $timed, $starttime;
 
 	$json_out;
 
@@ -115,10 +116,31 @@ function processRequest() {
 			$json_out = getStationsList();
 			break;
 		default:
-			die("\n{\"error\":\"No valid request made\"}");
+			die("{\"error\":\"No valid request made\"}");
 	}
 
-	return $json_out;
+	# Original method of adding the processingtime made invalid JSON (woops!)
+	if ($timed) {
+		$json_a = json_decode($json_out, true);
+		$json_a["processingtime"] = (microtime(true) - $starttime);
+		$json_out = json_encode($json_a);
+	}
+
+	echobig($json_out);
+}
+
+/**
+ * Function to improve performance of echoing large strings.
+ * As some functions return long JSON strings, may improve echo performance
+ * cf. http://wonko.com/post/seeing_poor_performance_using_phps_echo_statement_heres_why
+ * @version 0.1.4
+ **/
+function echobig($string, $buffersize = 8192) {
+	$split = str_split($string, $buffersize);
+
+	foreach ($split as $chunk) {
+		echo $chunk;
+	}
 }
 
 /**
@@ -142,6 +164,48 @@ function validateCache($filename, $expiretime) {
 }
 
 /**
+ * Convenience function, download XML from URL, return it in a string
+ * @return string XML downloaded from the parsed URL
+ * @author Filipe De Sousa
+ * @version 0.1.5
+ **/
+function getXml($url) {
+	# Since we must use curl, initialise its handler
+	$ch = curl_init();
+	# Setup curl with our options
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+	curl_setopt($ch, CURLOPT_URL, $url);
+	# Get the source with curl
+	$source = curl_exec($ch);
+	# Close up curl, no longer needed
+	curl_close($ch);
+	# Parse our xml
+	$xml = simpleXML_load_string($source);
+	# Return it
+	return $xml;
+}
+
+/**
+ * Convenience method to write out JSON to file
+ * Just makes code a little cleaner elsewhere
+ * @return nothing
+ * @author Filipe De Sousa
+ * @version 0.1.5
+ **/
+function writeToCacheFile($filename, $json) {
+	# Open the file for writing
+	$file = fopen($filename, "w+");
+	# Write out our newest data copy to file
+	if (json_decode($json) != null and flock($file, LOCK_EX)) {
+		# Perform quick sanity check, and lock the file
+		fwrite($file, $json);
+	}
+	# Always unlock and close the file
+	flock($file, LOCK_UN);
+	fclose($file);
+}
+
+/**
  * Method to get, parse, and return the TfL XML feed as a JSON string
  * for Detailed Predictions on a given TfL line for a given station.
  * Reads from cached file if it was recently updated, fetches latest data otherwise.
@@ -150,7 +214,9 @@ function validateCache($filename, $expiretime) {
  * @version 0.1
  **/
 function getDetailedPredictions() {
-	global $station, $line, $lines_list;
+	# Get some global variables
+	global $lines_list, $line, $station;
+
 	# Create the output array now, with information on request type
 	$out_arr = array("requesttype" => "Detailed Predictions");
 
@@ -224,39 +290,21 @@ function getDetailedPredictions() {
 	# Also make up the URL for the request for later
 	$url = BASE_URL . PREDICTION_DETAILED . "/" . $line . "/" . $station;
 
-	# Determine if the cache is valid
+	# Determine if the cache is valid (30 seconds)
 	if (validateCache($filename, 30)) {
 		# If so, return the cached file's contents
 		return file_get_contents($filename);
 	}
-	# For safety, open the file now
-	$file = fopen($filename, "w+");
 
 	# Otherwise, get XML from the URL
-	# Since we must use curl, initialise its handler
-	$ch = curl_init();
-	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-	curl_setopt($ch, CURLOPT_URL, $url);
-	$source = curl_exec($ch);
-	curl_close($ch);
-	$xml = simpleXML_load_string($source);
+	$xml = getXml($url);
 
 	# Parse the XML into our array
 	$out_arr = array_merge($out_arr, parseDetailedPredictionsXml($xml));
-	# Original method of adding the processingtime to the JSON was invalid, new method solves it
-	if ($GLOBALS['timed']) {
-		$out_arr["processingtime"] = (microtime(true) - $GLOBALS['starttime']);
-	}
 	$json_a = json_encode($out_arr, true);
 
-	# Write out our newest data copy to file
-	if (json_decode($json_a) != null and flock($file, LOCK_EX)) {
-		# Perform quick sanity check, and lock the file
-		fwrite($file, $json_a);
-	}
-	# Always unlock and close the file
-	flock($file, LOCK_UN);
-	fclose($file);
+	# Write out data to file
+	writeToCacheFile($filename, $json_a);
 
 	# Return the json
 	return $json_a;
@@ -270,7 +318,9 @@ function getDetailedPredictions() {
  * @version 0.1
  **/
 function getSummaryPredictions() {
-	global $line, $lines_list;
+	# Get some global variables
+	global $lines_list, $line;
+
 	# Create the output array now, with information on request type
 	$out_arr = array("requesttype" => "Summary Predictions");
 
@@ -326,39 +376,21 @@ function getSummaryPredictions() {
 	}
 	$url = BASE_URL . PREDICTION_SUMMARY . "/" . $line;
 
-	# Determine if the cache is valid
+	# Determine if the cache is valid (30 seconds)
 	if (validateCache($filename, 30)) {
 		# If so, return the cached file's contents
 		return file_get_contents($filename);
 	}
-	# For safety, open the file now
-	$file = fopen($filename, "w+");
 
 	# Otherwise, get XML from the URL
-	# Since we must use curl, initialise its handler
-	$ch = curl_init();
-	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-	curl_setopt($ch, CURLOPT_URL, $url);
-	$source = curl_exec($ch);
-	curl_close($ch);
-	$xml = simpleXML_load_string($source);
+	$xml = getXml($url);
 
 	# Parse the XML into our array
 	$out_arr = array_merge($out_arr, parseSummaryPredictionsXml($xml));
-	# Add processing time, if requested
-	if ($GLOBALS['timed']) {
-		$out_arr["processingtime"] = (microtime(true) - $GLOBALS['starttime']);
-	}
 	$json_a = json_encode($out_arr, true);
 
-	# Write out our newest data copy to file
-	if (json_decode($json_a) != null and flock($file, LOCK_EX)) {
-		# Perform quick sanity check, and lock the file
-		fwrite($file, $json_a);
-	}
-	# Always unlock and close the file
-	flock($file, LOCK_UN);
-	fclose($file);
+	# Write out data to file
+	writeToCacheFile($filename, $json_a);
 
 	# Return the json
 	return $json_a;
@@ -373,7 +405,9 @@ function getSummaryPredictions() {
  * @version 0.1
  **/
 function getLineStatus() {
+	# Get some global variables
 	global $incidents_only;
+
 	# Create the output array now, with information on request type
 	$out_arr = array("requesttype" => "Line Status");
 
@@ -423,39 +457,21 @@ function getLineStatus() {
 	}
 	$filename .= FILE_EXTENSION;
 
-	# Determine if the cache is valid
+	# Determine if the cache is valid (30 seconds)
 	if (validateCache($filename, 30)) {
 		# If so, return the cached file's contents
 		return file_get_contents($filename);
 	}
-	# For safety, open the file now
-	$file = fopen($filename, "w+");
 
 	# Otherwise, get XML from the URL
-	# Since we must use curl, initialise its handler
-	$ch = curl_init();
-	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-	curl_setopt($ch, CURLOPT_URL, $url);
-	$source = curl_exec($ch);
-	curl_close($ch);
-	$xml = simpleXML_load_string($source);
+	$xml = getXml($url);
 
 	# Parse the XML into our array
 	$out_arr = array_merge($out_arr, parseLineStatusXml($xml));
-	# Add processing time, if requested
-	if ($GLOBALS['timed']) {
-		$out_arr["processingtime"] = (microtime(true) - $GLOBALS['starttime']);
-	}
 	$json_a = json_encode($out_arr, true);
 
-	# Write out our newest data copy to file
-	if (json_decode($json_a) != null and flock($file, LOCK_EX)) {
-		# Perform quick sanity check, and lock the file
-		fwrite($file, $json_a);
-	}
-	# Always unlock and close the file
-	flock($file, LOCK_UN);
-	fclose($file);
+	# Write out data to file
+	writeToCacheFile($filename, $json_a);
 
 	# Return the json
 	return $json_a;
@@ -470,7 +486,9 @@ function getLineStatus() {
  * @version 0.1
  **/
 function getStationStatus() {
+	# Get some global variables
 	global $incidents_only;
+
 	# Create the output array now, with information on request type
 	$out_arr = array("requesttype" => "Station Status");
 
@@ -519,39 +537,21 @@ function getStationStatus() {
 	}
 	$filename .= FILE_EXTENSION;
 
-	# Determine if the cache is valid
+	# Determine if the cache is valid (30 seconds)
 	if (validateCache($filename, 30)) {
 		# If so, return the cached file's contents
 		return file_get_contents($filename);
 	}
-	# For safety, open the file now
-	$file = fopen($filename, "w+");
 
 	# Otherwise, get XML from the URL
-	# Since we must use curl, initialise its handler
-	$ch = curl_init();
-	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-	curl_setopt($ch, CURLOPT_URL, $url);
-	$source = curl_exec($ch);
-	curl_close($ch);
-	$xml = simpleXML_load_string($source);
+	$xml = getXml($url);
 
 	# Parse the XML into our array
 	$out_arr = array_merge($out_arr, parseStationStatusXml($xml));
-	# Add processing time, if requested
-	if ($GLOBALS['timed']) {
-		$out_arr["processingtime"] = (microtime(true) - $GLOBALS['starttime']);
-	}
 	$json_a = json_encode($out_arr, true);
 
-	# Write out our newest data copy to file
-	if (json_decode($json_a) != null and flock($file, LOCK_EX)) {
-		# Perform quick sanity check, and lock the file
-		fwrite($file, $json_a);
-	}
-	# Always unlock and close the file
-	flock($file, LOCK_UN);
-	fclose($file);
+	# Write out data to file
+	writeToCacheFile($filename, $json_a);
 
 	# Return the json
 	return $json_a;
@@ -566,7 +566,9 @@ function getStationStatus() {
  * @version 0.1
  **/
 function getStationsList() {
+	# Get some global variables
 	global $lines_list;
+
 	# Create the output array now, with information on request type
 	$out_arr = array("requesttype" => "Stations List",
 					"lines" => array());
@@ -593,46 +595,27 @@ function getStationsList() {
 	# Construct the filename for output
 	$filename = BASE_FILE . STATIONS_LIST . FILE_EXTENSION;
 
-	# Determine if the cache is valid
-	if (validateCache($filename, 24 * 60 * 60)) {
+	# Determine if the cache is valid (7 days in seconds)
+	if (validateCache($filename, 604800)) {
 		# If so, return the cached file's contents
 		return file_get_contents($filename);
 	}
-	# For safety, open the file now
-	$file = fopen($filename, "w+");
-
-	# Since we must use curl, initialise its handler
-	$ch = curl_init();
-	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
 	foreach ($lines_list as $code => $name) {
 		$line = array("linecode" => $code,
 					"linename" => $name);
 		$url = BASE_URL . PREDICTION_SUMMARY . "/" . $code;
-		curl_setopt($ch, CURLOPT_URL, $url);
-		$source = curl_exec($ch);
-		# Get XML from the URL
-		$xml = simpleXML_load_string($source);
+		# Get the XML for parsing
+		$xml = getXml($url);
 		# Parse it into our working array
 		$line["stations"] = parseStationsListXml($xml);
 		# Add the working array to our lines array
 		$out_arr["lines"][] = $line;
 	}
-	curl_close($ch);
-	# Add processing time, if requested
-	if ($GLOBALS['timed']) {
-		$out_arr["processingtime"] = (microtime(true) - $GLOBALS['starttime']);
-	}
 	$json_a = json_encode($out_arr, true);
 
-	# Write out our newest data copy to file
-	if (json_decode($json_a) != null and flock($file, LOCK_EX)) {
-		# Perform quick sanity check, and lock the file
-		fwrite($file, $json_a);
-	}
-	# Always unlock and close the file
-	flock($file, LOCK_UN);
-	fclose($file);
+	# Write out data to file
+	writeToCacheFile($filename, $json_a);
 
 	# Return the json
 	return $json_a;
