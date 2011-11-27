@@ -4,7 +4,7 @@
  * tfl.php - TfL API that makes sense
  * Filipe De Sousa
  * November 24, 2011
- * Version 0.1
+ * Version 0.1.1
  */
 
 /*****************************************************************************************************
@@ -78,9 +78,9 @@ $timed = (bool) $_GET["timed"];
 # --------------------------------------------------------------------------------
 # Command execution area
 echo processRequest();
-if ($timed) {
-	echo "\n{\"processingtime\":\"" . (microtime(true) - $starttime) . "\"}";
-}
+# Processing time was previously tacked on as string, but made for invalid JSON
+# Unfortunately, the real side-effect is that the program caches the timing data
+# too, so now cached requests state they took the same time as fresh requests
 
 # Takes just one line to get the program started fetching/parsing requests
 # --------------------------------------------------------------------------------
@@ -243,6 +243,10 @@ function getDetailedPredictions() {
 
 	# Parse the XML into our array
 	$out_arr = array_merge($out_arr, parseDetailedPredictionsXml($xml));
+	# Original method of adding the processingtime to the JSON was invalid, new method solves it
+	if ($GLOBALS['timed']) {
+		$out_arr["processingtime"] = (microtime(true) - $GLOBALS['starttime']);
+	}
 	$json_a = json_encode($out_arr, true);
 
 	# Write out our newest data copy to file
@@ -341,6 +345,10 @@ function getSummaryPredictions() {
 
 	# Parse the XML into our array
 	$out_arr = array_merge($out_arr, parseSummaryPredictionsXml($xml));
+	# Add processing time, if requested
+	if ($GLOBALS['timed']) {
+		$out_arr["processingtime"] = (microtime(true) - $GLOBALS['starttime']);
+	}
 	$json_a = json_encode($out_arr, true);
 
 	# Write out our newest data copy to file
@@ -434,6 +442,10 @@ function getLineStatus() {
 
 	# Parse the XML into our array
 	$out_arr = array_merge($out_arr, parseLineStatusXml($xml));
+	# Add processing time, if requested
+	if ($GLOBALS['timed']) {
+		$out_arr["processingtime"] = (microtime(true) - $GLOBALS['starttime']);
+	}
 	$json_a = json_encode($out_arr, true);
 
 	# Write out our newest data copy to file
@@ -526,6 +538,10 @@ function getStationStatus() {
 
 	# Parse the XML into our array
 	$out_arr = array_merge($out_arr, parseStationStatusXml($xml));
+	# Add processing time, if requested
+	if ($GLOBALS['timed']) {
+		$out_arr["processingtime"] = (microtime(true) - $GLOBALS['starttime']);
+	}
 	$json_a = json_encode($out_arr, true);
 
 	# Write out our newest data copy to file
@@ -603,6 +619,10 @@ function getStationsList() {
 		$out_arr["lines"][] = $line;
 	}
 	curl_close($ch);
+	# Add processing time, if requested
+	if ($GLOBALS['timed']) {
+		$out_arr["processingtime"] = (microtime(true) - $GLOBALS['starttime']);
+	}
 	$json_a = json_encode($out_arr, true);
 
 	# Write out our newest data copy to file
