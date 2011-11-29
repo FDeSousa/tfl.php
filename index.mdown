@@ -469,46 +469,42 @@ The details value gives a much longer message, providing more useful information
 	        {
 	            "linecode": "b",
 	            "linename": "Bakerloo",
-	            "stations": {
-	                "stations": [
-	                    {
-	                        "stationcode": "BST",
-	                        "stationname": "Baker Street."
-	                    },
-	                    {
-	                        "stationcode": "CHX",
-	                        "stationname": "Charing Cross."
-	                    },
-	                    {
-	                        "stationcode": "ERB",
-	                        "stationname": "Edgware Road (Bakerloo)."
-	                    }
-	                ]
-	            }
+	            "stations": [
+                    {
+                        "stationcode": "BST",
+                        "stationname": "Baker Street."
+                    },
+                    {
+                        "stationcode": "CHX",
+                        "stationname": "Charing Cross."
+                    },
+                    {
+                        "stationcode": "ERB",
+                        "stationname": "Edgware Road (Bakerloo)."
+                    }
+	            ]
 	        },
 	        {
 	            "linecode": "c",
 	            "linename": "Central",
-	            "stations": {
-	                "stations": [
-	                    {
-	                        "stationcode": "BNK",
-	                        "stationname": "Bank."
-	                    },
-	                    {
-	                        "stationcode": "BDE",
-	                        "stationname": "Barkingside."
-	                    },
-	                    {
-	                        "stationcode": "BNG",
-	                        "stationname": "Bethnal Green."
-	                    },
-	                    {
-	                        "stationcode": "BDS",
-	                        "stationname": "Bond Street."
-	                    }
-	                ]
-	            }
+	            "stations": [
+                    {
+                        "stationcode": "BNK",
+                        "stationname": "Bank."
+                    },
+                    {
+                        "stationcode": "BDE",
+                        "stationname": "Barkingside."
+                    },
+                    {
+                        "stationcode": "BNG",
+                        "stationname": "Bethnal Green."
+                    },
+                    {
+                        "stationcode": "BDS",
+                        "stationname": "Bond Street."
+                    }
+	            ]
 	        }
 	    ]
 	}
@@ -579,7 +575,7 @@ To use TfL's data and APIs, make sure to register with them.
 ***
 ## About me
 I'm Filipe, recent Computing grad that's just trying to find something to do while looking for work.  
-Visit my main page at [desousa.com.pt](http://desousa.com.pt)
+Visit my main page at [desousa.com.pt](http://desousa.com.pt)  
 View my [projects on github](https://github.com/FDeSousa)
 </div>
 </div>

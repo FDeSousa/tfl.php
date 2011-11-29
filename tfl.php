@@ -582,12 +582,12 @@ function getStationsList() {
 	 **/
 	function parseStationsListXml($xml) {
 		// Get the XML data from the feed, break it down
-		$arr = array("stations" => array());
+		$arr = array();
 
 		foreach ($xml->S as $station) {
 			$station_arr = array("stationcode" => (string) $station["Code"],
 								"stationname" => (string) $station["N"]);
-			$arr["stations"][] = $station_arr;
+			$arr[] = $station_arr;
 		}
 		return $arr;
 	}
