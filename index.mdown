@@ -110,7 +110,7 @@ All sample JSON returned, after being made human-readable (it is normally sent a
 	            "platforms": [
 	                {
 	                    "platformname": "Westbound - Platform 5",
-	                    "platformnumber": "5",
+	                    "platformnumber": 5,
 	                    "trains": [
 	                        {
 	                            "lcid": "1071728",
@@ -118,8 +118,8 @@ All sample JSON returned, after being made human-readable (it is normally sent a
 	                            "timeto": "2:30",
 	                            "location": "At Liverpool Street",
 	                            "destination": "West Ruislip",
-	                            "destcode": "547",
-	                            "tripno": "7"
+	                            "destcode": 547,
+	                            "tripno": 7
 	                        },
 	                        {
 	                            "lcid": "1066154",
@@ -127,14 +127,14 @@ All sample JSON returned, after being made human-readable (it is normally sent a
 	                            "timeto": "4:30",
 	                            "location": "Between Bethnal Green and Liverpool Street",
 	                            "destination": "Northolt",
-	                            "destcode": "564",
-	                            "tripno": "5"
+	                            "destcode": 564,
+	                            "tripno": 5
 	                        }
 	                    ]
 	                },
 	                {
 	                    "platformname": "Eastbound - Platform 6",
-	                    "platformnumber": "6",
+	                    "platformnumber": 6,
 	                    "trains": [
 	                        {
 	                            "lcid": "1064653",
@@ -142,8 +142,8 @@ All sample JSON returned, after being made human-readable (it is normally sent a
 	                            "timeto": "0:30",
 	                            "location": "At Bank",
 	                            "destination": "Epping",
-	                            "destcode": "530",
-	                            "tripno": "5"
+	                            "destcode": 530,
+	                            "tripno": 5
 	                        },
 	                        {
 	                            "lcid": "1063487",
@@ -151,8 +151,8 @@ All sample JSON returned, after being made human-readable (it is normally sent a
 	                            "timeto": "3:30",
 	                            "location": "Left Chancery Lane",
 	                            "destination": "Hainault via Newbury Park",
-	                            "destcode": "532",
-	                            "tripno": "6"
+	                            "destcode": 532,
+	                            "tripno": 6
 	                        }
 	                    ]
 	                }
@@ -161,50 +161,50 @@ All sample JSON returned, after being made human-readable (it is normally sent a
 	    ]
 	}
 
-*	**requesttype**  
+*	**requesttype** - string  
 	Informational entry just to confirm the type of request made
-*	**information**  
+*	**information** - object  
 	Informational array, providing data directly from the XML file
-	*	**created**  
+	*	**created** - string  
 		Original creation date/time of the XML data
-	*	**linecode**  
+	*	**linecode** - string  
 		TfLU code of the line queried
-	*	**linename**  
+	*	**linename** - string  
 		Full name of the TfLU line queried
-*	**stations**  
+*	**stations** - array of object station  
 	Array grouping any and all stations from the query (should only ever contain one within detailed prediction)
-	*	**stationcode**  
+	*	**stationcode** - string  
 		TfLU code for the station queried
-	*	**stationname**  
+	*	**stationname** - string  
 		Full name of the TfLU station queried
-	*	**platforms**  
+	*	**platforms** - array of object platform  
 		Array grouping all platforms of the station for given line (generally two per station)
-		*	**platformname**  
+		*	**platformname** - string  
 			Full name of the platform (generally containing direction and number)
-		*	**platformnumber**  
+		*	**platformnumber** - integer  
 			Platform number (not an integer for parsing reasons)
-		*	**trains**  
+		*	**trains** - array of object train  
 			Array grouping trains predicted to arrive at the given platform within the next thirty minutes
-			*	**lcid**  
+			*	**lcid** - string  
 				Unique train identifier
-			*	**secondsto**  
-				Predicted number of seconds until the train reaches the platform (0 if at platform)
-			*	**timeto**  
+			*	**secondsto** - string  
+				Predicted number of seconds until the train reaches the platform (- if at platform, hence a string, not an integer).
+			*	**timeto** - string  
 				Predicted time in minutes and seconds until train reaches platform ('-' if at platform) rounded to nearest 30 seconds
-			*	**location**  
+			*	**location** - string  
 				The current location of the train ("At Platform" if already at the platform)
-			*	**destination**  
+			*	**destination** - string  
 				Intended destination of the train
-			*	**destcode**  
+			*	**destcode** - integer  
 				The identifying code of the destination (0 can mean "Unknown"/"Awaiting confirmation", 546 signifies "out of service")
-			*	**tripno**  
+			*	**tripno** - integer  
 				Number of trips for the train on the day (255 signifies "no trip")
 
 ### Summary Predictions
 
 	{
 	    "requesttype": "Summary Predictions",
-	    "created": "2011\/11\/24 18:30:38",
+	    "created": "2011/11/24 18:30:38",
 	    "stations": [
 	        {
 	            "stationcode": "BNK",
@@ -212,20 +212,20 @@ All sample JSON returned, after being made human-readable (it is normally sent a
 	            "platforms": [
 	                {
 	                    "platformname": "Westbound - Platform 5",
-	                    "platformcode": "0",
+	                    "platformcode": 0,
 	                    "trains": [
 	                        {
-	                            "trainnumber": "017",
-	                            "tripno": "10",
-	                            "destcode": "547",
+	                            "trainnumber": 17,
+	                            "tripno": 10,
+	                            "destcode": 547,
 	                            "destination": "West Ruislip",
 	                            "timeto": "1:00",
 	                            "location": "Between Liverpool Street and Bank"
 	                        },
 	                        {
-	                            "trainnumber": "104",
-	                            "tripno": "13",
-	                            "destcode": "562",
+	                            "trainnumber": 104,
+	                            "tripno": 13,
+	                            "destcode": 562,
 	                            "destination": "Ruislip Gardens",
 	                            "timeto": "3:00",
 	                            "location": "Between Bethnal Green and Liverpool Street"
@@ -234,20 +234,20 @@ All sample JSON returned, after being made human-readable (it is normally sent a
 	                },
 	                {
 	                    "platformname": "Eastbound - Platform 6",
-	                    "platformcode": "1",
+	                    "platformcode": 1,
 	                    "trains": [
 	                        {
-	                            "trainnumber": "050",
-	                            "tripno": "12",
-	                            "destcode": "532",
+	                            "trainnumber": 50,
+	                            "tripno": 12,
+	                            "destcode": 532,
 	                            "destination": "Hainault via Newbury Park",
 	                            "timeto": "2:00",
 	                            "location": "At St. Paul's"
 	                        },
 	                        {
-	                            "trainnumber": "005",
-	                            "tripno": "9",
-	                            "destcode": "530",
+	                            "trainnumber": 5,
+	                            "tripno": 9,
+	                            "destcode": 530,
 	                            "destination": "Epping",
 	                            "timeto": "3:30",
 	                            "location": "Left Chancery Lane"
@@ -262,12 +262,12 @@ All sample JSON returned, after being made human-readable (it is normally sent a
 	            "platforms": [
 	                {
 	                    "platformname": "Outer Rail - Platform 1",
-	                    "platformcode": "1",
+	                    "platformcode": 1,
 	                    "trains": [
 	                        {
-	                            "trainnumber": "074",
-	                            "tripno": "11",
-	                            "destcode": "548",
+	                            "trainnumber": 74,
+	                            "tripno": 11,
+	                            "destcode": 548,
 	                            "destination": "Ealing Broadway",
 	                            "timeto": "0:30",
 	                            "location": "Between Fairlop and Barkingside"
@@ -276,20 +276,20 @@ All sample JSON returned, after being made human-readable (it is normally sent a
 	                },
 	                {
 	                    "platformname": "Inner Rail - Platform 2",
-	                    "platformcode": "0",
+	                    "platformcode": 0,
 	                    "trains": [
 	                        {
-	                            "trainnumber": "030",
-	                            "tripno": "8",
-	                            "destcode": "532",
+	                            "trainnumber": 30,
+	                            "tripno": 8,
+	                            "destcode": 532,
 	                            "destination": "Hainault via Newbury Park",
 	                            "timeto": "1:00",
 	                            "location": "Between Newbury Park and Barkingside"
 	                        },
 	                        {
-	                            "trainnumber": "031",
-	                            "tripno": "9",
-	                            "destcode": "532",
+	                            "trainnumber": 31,
+	                            "tripno": 9,
+	                            "destcode": 532,
 	                            "destination": "Hainault via Newbury Park",
 	                            "timeto": "2:30",
 	                            "location": "Approaching Newbury Park"
@@ -301,35 +301,35 @@ All sample JSON returned, after being made human-readable (it is normally sent a
 	    ]
 	}
 
-*	**requesttype**  
+*	**requesttype** - string  
 	Informational entry just to confirm the type of request made
-*	**created**  
+*	**created** - string  
 	Original creation date/time of the XML data
-*	**stations**  
+*	**stations** - array of object station  
 	Array grouping any and all stations from the query (summary predictions contain all stations on the line)
-	*	**stationcode**  
+	*	**stationcode** - string  
 		TfLU code for the station queried
-	*	**stationname**  
+	*	**stationname** - string  
 		Full name of the TfLU station queried
-	*	**platforms**  
+	*	**platforms** - array of object platform  
 		Array grouping all platforms of the station for given line (generally two per station)
-		*	**platformname**  
+		*	**platformname** - string  
 			Full name of the platform (generally containing direction and number)
-		*	**platformcode**  
+		*	**platformcode** - integer  
 			Code counting from 0 representing the platform
-		*	**trains**  
+		*	**trains** - array of object train  
 			Array grouping trains predicted to arrive at the given platform within the next thirty minutes
-			*	**trainnumber**  
+			*	**trainnumber** - integer  
 				Train number of the train (similar to a flight number, but used for the whole day)
-			*	**tripno**  
+			*	**tripno** - integer  
 				Number of trips for the train on the day (255 signifies "no trip")
-			*	**destcode**  
+			*	**destcode** - integer  
 				The identifying code of the destination (0 can mean "Unknown"/"Awaiting confirmation", 546 signifies "out of service")
-			*	**destination**  
+			*	**destination** - string  
 				Intended destination of the train
-			*	**timeto**  
+			*	**timeto** - string  
 				Predicted time in minutes and seconds until train reaches platform ('-' if at platform) rounded to nearest 30 seconds
-			*	**location**  
+			*	**location** - string  
 				The current location of the train ("At Platform" if already at the platform)
 
 ### Line Status
@@ -338,47 +338,47 @@ All sample JSON returned, after being made human-readable (it is normally sent a
 	    "requesttype": "Line Status",
 	    "lines": [
 	        {
-	            "id": "0",
+	            "id": 0,
 	            "details": "",
-	            "lineid": "1",
+	            "lineid": 1,
 	            "linename": "Bakerloo",
 	            "statusid": "GS",
 	            "status": "GoodService",
 	            "description": "Good Service",
-	            "active": "true"
+	            "active": true
 	        },
 	        {
-	            "id": "1",
+	            "id": 1,
 	            "details": "",
-	            "lineid": "2",
+	            "lineid": 2,
 	            "linename": "Central",
 	            "statusid": "GS",
 	            "status": "GoodService",
 	            "description": "Good Service",
-	            "active": "true"
+	            "active": true
 	        }
 	    ]
 	}
 
-*	**requesttype**  
+*	**requesttype** - string  
 	Informational entry just to confirm the type of request made
-*	**lines**  
+*	**lines** - array of object line  
 	Array grouping all lines from the query (if the query is for incidents only this may contain no entries)
-	*	**id**  
+	*	**id** - integer  
 		Identifier of the line status
-	*	**details**  
+	*	**details** - string  
 		Description of the status of the line if the status is not normal, otherwise blank
-	*	**lineid**  
+	*	**lineid** - integer  
 		Line code identifier
-	*	**linename**  
+	*	**linename** - string  
 		Name of the line
-	*	**statusid**  
+	*	**statusid** - string  
 		Two character identifier of the status of the line
-	*	**status**  
+	*	**status** - string  
 		Text code representing the general status of the line
-	*	**description**  
+	*	**description** - string  
 		Description of the status of the line
-	*	**active**  
+	*	**active** - boolean  
 		Boolean value indicating if status is active (seemingly always true)
 
 The values of lines[statusid, status, description] all reference the same information, displaying them in different ways.
@@ -395,61 +395,61 @@ As there is a certain level of ambiguity as to whether these values will ever re
 	    "requesttype": "Station Status",
 	    "stations": [
 	        {
-	            "id": "1",
+	            "id": 1,
 	            "details": "",
 	            "stationname": "Acton Town",
 	            "statusid": "O",
 	            "status": "Open",
 	            "description": "Open",
-	            "active": "false"
+	            "active": false
 	        },
 	        {
-	            "id": "2",
+	            "id": 2,
 	            "details": "",
 	            "stationname": "Aldgate",
 	            "statusid": "O",
 	            "status": "Open",
 	            "description": "Open",
-	            "active": "false"
+	            "active": false
 	        },
 	        {
-	            "id": "14",
+	            "id": 14,
 	            "details": "To the platforms due to a faulty lift.",
 	            "stationname": "Barking",
 	            "statusid": "NS",
 	            "status": "Closed",
 	            "description": "No Step Free Access",
-	            "active": "true"
+	            "active": true
 	        },
 	        {
-	            "id": "233",
+	            "id": 233,
 	            "details": "To the Northern line until late November due to planned engineering work.",
 	            "stationname": "Tottenham Court Road",
 	            "statusid": "C",
 	            "status": "Closed",
 	            "description": "Closed",
-	            "active": "true"
+	            "active": true
 	        }
 	    ]
 	}
 
-*	**requesttype**  
+*	**requesttype** - string  
 	Informational entry just to confirm the type of request made
-*	**stations**  
+*	**stations** - array of object station  
 	Array grouping any and all stations from the query (if the query is for incidents only this may contain no entries)
-	*	**id**  
+	*	**id** - integer  
 		Identifier of the station (stations seem to be in alphabetical order)
-	*	**details**  
+	*	**details** - string  
 		Description of the status of the station if the status is not normal, otherwise blank
-	*	**stationname**  
+	*	**stationname** - string  
 		The name of the station
-	*	**statusid**
+	*	**statusid** - string  
 		One or two character identifier of the status of the station
-	*	**status**  
+	*	**status** - string  
 		Text code representing the general status of the station
-	*	**description**  
+	*	**description** - string  
 		Short description of the status of the station
-	*	**active**  
+	*	**active** - boolean  
 		Boolean value indicating if status is active (seemingly always true for an abnormal status)
 
 The values of stations[statusid, status, description] all reference the same information, displaying them in different ways.
@@ -509,19 +509,19 @@ The details value gives a much longer message, providing more useful information
 	    ]
 	}
 
-*	**requesttype**  
+*	**requesttype** - string  
 	Informational entry just to confirm the type of request made
-*	**lines**  
+*	**lines** - array of object line  
 	Array grouping any and all lines from the query
-	*	**linecode**  
+	*	**linecode** - string  
 		The unique identifying character for a TfLU train line. Used for queries
-	*	**linename**  
+	*	**linename** - string  
 		The full name of the TfLU train line
-	*	**stations**  
+	*	**stations** - array of object station  
 		Array grouping any and all stations from the query
-		*	**stationcode**  
+		*	**stationcode** - string  
 			The unique identifying characters for a TfLU train station. Used for queries
-		*	**stationname**  
+		*	**stationname** - string  
 			The full name of the TfLU train station
 
 ***

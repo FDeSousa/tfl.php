@@ -4,7 +4,7 @@
  * tfl.php - TfL API that makes sense
  * Filipe De Sousa
  * November 24, 2011
- * Version 0.1.5
+ * Version 0.3
  */
 
 /******************************************************************************
@@ -240,7 +240,7 @@ function getDetailedPredictions() {
 			# platforms is built with all information before being placed in main platforms array
 			foreach ($station->P as $platform) {
 				$platform_arr = array("platformname" => (string) $platform["N"],
-									"platformnumber" => (string) $platform["Num"],
+									"platformnumber" => (int) $platform["Num"],
 									"trains" => array());
 				# trains built with all information before being placed in main trains array also
 				foreach ($platform->T as $train) {
@@ -249,8 +249,8 @@ function getDetailedPredictions() {
 									"timeto" => (string) $train["TimeTo"],
 									"location" => (string) $train["Location"],
 									"destination" => (string) $train["Destination"],
-									"destcode" => (string) $train["DestCode"],
-									"tripno" => (string) $train["TripNo"]);
+									"destcode" => (int) $train["DestCode"],
+									"tripno" => (int) $train["TripNo"]);
 					# place train array into current platform array
 					$platform_arr["trains"][] = $train_arr;
 				}
@@ -339,12 +339,12 @@ function getSummaryPredictions() {
 								"platforms" => array());
 			foreach ($station->P as $platform) {
 				$platform_arr = array("platformname" => (string) $platform["N"],
-									"platformcode" => (string) $platform["Code"],
+									"platformcode" => (int) $platform["Code"],
 									"trains" => array());
 				foreach ($platform->T as $train) {
-					$train_arr = array("trainnumber" => (string) $train["S"],
-									"tripno" => (string) $train["T"],
-									"destcode" => (string) $train["D"],
+					$train_arr = array("trainnumber" => (int) $train["S"],
+									"tripno" => (int) $train["T"],
+									"destcode" => (int) $train["D"],
 									"destination" => (string) $train["DE"],
 									"timeto" => (string) $train["C"],
 									"location" => (string) $train["L"]);
@@ -420,14 +420,14 @@ function getLineStatus() {
 		$arr = array("lines" => array());
 
 		foreach ($xml->LineStatus as $linestatus) {
-			$line_arr = array("id" => (string) $linestatus["ID"],
+			$line_arr = array("id" => (int) $linestatus["ID"],
 							"details" => (string) $linestatus["StatusDetails"],
-							"lineid" => (string) $linestatus->Line[0]["ID"],
+							"lineid" => (int) $linestatus->Line[0]["ID"],
 							"linename" => (string) $linestatus->Line[0]["Name"],
 							"statusid" => (string) $linestatus->Status[0]["ID"],
 							"status" => (string) $linestatus->Status[0]["CssClass"],
 							"description" => (string) $linestatus->Status[0]["Description"],
-							"active" => (string) $linestatus->Status[0]["IsActive"]);
+							"active" => (bool) $linestatus->Status[0]["IsActive"]);
 			$arr["lines"][] = $line_arr;
 		}
 		return $arr;
@@ -501,13 +501,13 @@ function getStationStatus() {
 		$arr = array("stations" => array());
 
 		foreach ($xml->StationStatus as $stationstatus) {
-			$station_arr = array("id" => (string) $stationstatus["ID"],
+			$station_arr = array("id" => (int) $stationstatus["ID"],
 							"details" => (string) $stationstatus["StatusDetails"],
 							"stationname" => (string) $stationstatus->Station[0]["Name"],
 							"statusid" => (string) $stationstatus->Status[0]["ID"],
 							"status" => (string) $stationstatus->Status[0]["CssClass"],
 							"description" => (string) $stationstatus->Status[0]["Description"],
-							"active" => (string) $stationstatus->Status[0]["IsActive"]);
+							"active" => (bool) $stationstatus->Status[0]["IsActive"]);
 			$arr["stations"][] = $station_arr;
 		}
 		return $arr;

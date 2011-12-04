@@ -83,7 +83,7 @@
             &quot;platforms&quot;: [
                 {
                     &quot;platformname&quot;: &quot;Westbound - Platform 5&quot;,
-                    &quot;platformnumber&quot;: &quot;5&quot;,
+                    &quot;platformnumber&quot;: 5,
                     &quot;trains&quot;: [
                         {
                             &quot;lcid&quot;: &quot;1071728&quot;,
@@ -91,8 +91,8 @@
                             &quot;timeto&quot;: &quot;2:30&quot;,
                             &quot;location&quot;: &quot;At Liverpool Street&quot;,
                             &quot;destination&quot;: &quot;West Ruislip&quot;,
-                            &quot;destcode&quot;: &quot;547&quot;,
-                            &quot;tripno&quot;: &quot;7&quot;
+                            &quot;destcode&quot;: 547,
+                            &quot;tripno&quot;: 7
                         },
                         {
                             &quot;lcid&quot;: &quot;1066154&quot;,
@@ -100,14 +100,14 @@
                             &quot;timeto&quot;: &quot;4:30&quot;,
                             &quot;location&quot;: &quot;Between Bethnal Green and Liverpool Street&quot;,
                             &quot;destination&quot;: &quot;Northolt&quot;,
-                            &quot;destcode&quot;: &quot;564&quot;,
-                            &quot;tripno&quot;: &quot;5&quot;
+                            &quot;destcode&quot;: 564,
+                            &quot;tripno&quot;: 5
                         }
                     ]
                 },
                 {
                     &quot;platformname&quot;: &quot;Eastbound - Platform 6&quot;,
-                    &quot;platformnumber&quot;: &quot;6&quot;,
+                    &quot;platformnumber&quot;: 6,
                     &quot;trains&quot;: [
                         {
                             &quot;lcid&quot;: &quot;1064653&quot;,
@@ -115,8 +115,8 @@
                             &quot;timeto&quot;: &quot;0:30&quot;,
                             &quot;location&quot;: &quot;At Bank&quot;,
                             &quot;destination&quot;: &quot;Epping&quot;,
-                            &quot;destcode&quot;: &quot;530&quot;,
-                            &quot;tripno&quot;: &quot;5&quot;
+                            &quot;destcode&quot;: 530,
+                            &quot;tripno&quot;: 5
                         },
                         {
                             &quot;lcid&quot;: &quot;1063487&quot;,
@@ -124,8 +124,8 @@
                             &quot;timeto&quot;: &quot;3:30&quot;,
                             &quot;location&quot;: &quot;Left Chancery Lane&quot;,
                             &quot;destination&quot;: &quot;Hainault via Newbury Park&quot;,
-                            &quot;destcode&quot;: &quot;532&quot;,
-                            &quot;tripno&quot;: &quot;6&quot;
+                            &quot;destcode&quot;: 532,
+                            &quot;tripno&quot;: 6
                         }
                     ]
                 }
@@ -135,30 +135,30 @@
 }
 </code></pre>
 <ul>
-<li><strong>requesttype</strong><br /> Informational entry just to confirm the type of request made</li>
-<li><strong>information</strong><br /> Informational array, providing data directly from the XML file
+<li><strong>requesttype</strong> - string<br /> Informational entry just to confirm the type of request made</li>
+<li><strong>information</strong> - object<br /> Informational array, providing data directly from the XML file
 <ul>
-<li><strong>created</strong><br /> Original creation date/time of the XML data</li>
-<li><strong>linecode</strong><br /> TfLU code of the line queried</li>
-<li><strong>linename</strong><br /> Full name of the TfLU line queried</li>
+<li><strong>created</strong> - string<br /> Original creation date/time of the XML data</li>
+<li><strong>linecode</strong> - string<br /> TfLU code of the line queried</li>
+<li><strong>linename</strong> - string<br /> Full name of the TfLU line queried</li>
 </ul></li>
-<li><strong>stations</strong><br /> Array grouping any and all stations from the query (should only ever contain one within detailed prediction)
+<li><strong>stations</strong> - array of object station<br /> Array grouping any and all stations from the query (should only ever contain one within detailed prediction)
 <ul>
-<li><strong>stationcode</strong><br /> TfLU code for the station queried</li>
-<li><strong>stationname</strong><br /> Full name of the TfLU station queried</li>
-<li><strong>platforms</strong><br /> Array grouping all platforms of the station for given line (generally two per station)
+<li><strong>stationcode</strong> - string<br /> TfLU code for the station queried</li>
+<li><strong>stationname</strong> - string<br /> Full name of the TfLU station queried</li>
+<li><strong>platforms</strong> - array of object platform<br /> Array grouping all platforms of the station for given line (generally two per station)
 <ul>
-<li><strong>platformname</strong><br /> Full name of the platform (generally containing direction and number)</li>
-<li><strong>platformnumber</strong><br /> Platform number (not an integer for parsing reasons)</li>
-<li><strong>trains</strong><br /> Array grouping trains predicted to arrive at the given platform within the next thirty minutes
+<li><strong>platformname</strong> - string<br /> Full name of the platform (generally containing direction and number)</li>
+<li><strong>platformnumber</strong> - integer<br /> Platform number (not an integer for parsing reasons)</li>
+<li><strong>trains</strong> - array of object train<br /> Array grouping trains predicted to arrive at the given platform within the next thirty minutes
 <ul>
-<li><strong>lcid</strong><br /> Unique train identifier</li>
-<li><strong>secondsto</strong><br /> Predicted number of seconds until the train reaches the platform (0 if at platform)</li>
-<li><strong>timeto</strong><br /> Predicted time in minutes and seconds until train reaches platform ('-' if at platform) rounded to nearest 30 seconds</li>
-<li><strong>location</strong><br /> The current location of the train (&quot;At Platform&quot; if already at the platform)</li>
-<li><strong>destination</strong><br /> Intended destination of the train</li>
-<li><strong>destcode</strong><br /> The identifying code of the destination (0 can mean &quot;Unknown&quot;/&quot;Awaiting confirmation&quot;, 546 signifies &quot;out of service&quot;)</li>
-<li><strong>tripno</strong><br /> Number of trips for the train on the day (255 signifies &quot;no trip&quot;)</li>
+<li><strong>lcid</strong> - string<br /> Unique train identifier</li>
+<li><strong>secondsto</strong> - string<br /> Predicted number of seconds until the train reaches the platform (- if at platform, hence a string, not an integer).</li>
+<li><strong>timeto</strong> - string<br /> Predicted time in minutes and seconds until train reaches platform ('-' if at platform) rounded to nearest 30 seconds</li>
+<li><strong>location</strong> - string<br /> The current location of the train (&quot;At Platform&quot; if already at the platform)</li>
+<li><strong>destination</strong> - string<br /> Intended destination of the train</li>
+<li><strong>destcode</strong> - integer<br /> The identifying code of the destination (0 can mean &quot;Unknown&quot;/&quot;Awaiting confirmation&quot;, 546 signifies &quot;out of service&quot;)</li>
+<li><strong>tripno</strong> - integer<br /> Number of trips for the train on the day (255 signifies &quot;no trip&quot;)</li>
 </ul></li>
 </ul></li>
 </ul></li>
@@ -166,7 +166,7 @@
 <h3 id="summary-predictions">Summary Predictions</h3>
 <pre><code>{
     &quot;requesttype&quot;: &quot;Summary Predictions&quot;,
-    &quot;created&quot;: &quot;2011\/11\/24 18:30:38&quot;,
+    &quot;created&quot;: &quot;2011/11/24 18:30:38&quot;,
     &quot;stations&quot;: [
         {
             &quot;stationcode&quot;: &quot;BNK&quot;,
@@ -174,20 +174,20 @@
             &quot;platforms&quot;: [
                 {
                     &quot;platformname&quot;: &quot;Westbound - Platform 5&quot;,
-                    &quot;platformcode&quot;: &quot;0&quot;,
+                    &quot;platformcode&quot;: 0,
                     &quot;trains&quot;: [
                         {
-                            &quot;trainnumber&quot;: &quot;017&quot;,
-                            &quot;tripno&quot;: &quot;10&quot;,
-                            &quot;destcode&quot;: &quot;547&quot;,
+                            &quot;trainnumber&quot;: 17,
+                            &quot;tripno&quot;: 10,
+                            &quot;destcode&quot;: 547,
                             &quot;destination&quot;: &quot;West Ruislip&quot;,
                             &quot;timeto&quot;: &quot;1:00&quot;,
                             &quot;location&quot;: &quot;Between Liverpool Street and Bank&quot;
                         },
                         {
-                            &quot;trainnumber&quot;: &quot;104&quot;,
-                            &quot;tripno&quot;: &quot;13&quot;,
-                            &quot;destcode&quot;: &quot;562&quot;,
+                            &quot;trainnumber&quot;: 104,
+                            &quot;tripno&quot;: 13,
+                            &quot;destcode&quot;: 562,
                             &quot;destination&quot;: &quot;Ruislip Gardens&quot;,
                             &quot;timeto&quot;: &quot;3:00&quot;,
                             &quot;location&quot;: &quot;Between Bethnal Green and Liverpool Street&quot;
@@ -196,20 +196,20 @@
                 },
                 {
                     &quot;platformname&quot;: &quot;Eastbound - Platform 6&quot;,
-                    &quot;platformcode&quot;: &quot;1&quot;,
+                    &quot;platformcode&quot;: 1,
                     &quot;trains&quot;: [
                         {
-                            &quot;trainnumber&quot;: &quot;050&quot;,
-                            &quot;tripno&quot;: &quot;12&quot;,
-                            &quot;destcode&quot;: &quot;532&quot;,
+                            &quot;trainnumber&quot;: 50,
+                            &quot;tripno&quot;: 12,
+                            &quot;destcode&quot;: 532,
                             &quot;destination&quot;: &quot;Hainault via Newbury Park&quot;,
                             &quot;timeto&quot;: &quot;2:00&quot;,
                             &quot;location&quot;: &quot;At St. Paul's&quot;
                         },
                         {
-                            &quot;trainnumber&quot;: &quot;005&quot;,
-                            &quot;tripno&quot;: &quot;9&quot;,
-                            &quot;destcode&quot;: &quot;530&quot;,
+                            &quot;trainnumber&quot;: 5,
+                            &quot;tripno&quot;: 9,
+                            &quot;destcode&quot;: 530,
                             &quot;destination&quot;: &quot;Epping&quot;,
                             &quot;timeto&quot;: &quot;3:30&quot;,
                             &quot;location&quot;: &quot;Left Chancery Lane&quot;
@@ -224,12 +224,12 @@
             &quot;platforms&quot;: [
                 {
                     &quot;platformname&quot;: &quot;Outer Rail - Platform 1&quot;,
-                    &quot;platformcode&quot;: &quot;1&quot;,
+                    &quot;platformcode&quot;: 1,
                     &quot;trains&quot;: [
                         {
-                            &quot;trainnumber&quot;: &quot;074&quot;,
-                            &quot;tripno&quot;: &quot;11&quot;,
-                            &quot;destcode&quot;: &quot;548&quot;,
+                            &quot;trainnumber&quot;: 74,
+                            &quot;tripno&quot;: 11,
+                            &quot;destcode&quot;: 548,
                             &quot;destination&quot;: &quot;Ealing Broadway&quot;,
                             &quot;timeto&quot;: &quot;0:30&quot;,
                             &quot;location&quot;: &quot;Between Fairlop and Barkingside&quot;
@@ -238,20 +238,20 @@
                 },
                 {
                     &quot;platformname&quot;: &quot;Inner Rail - Platform 2&quot;,
-                    &quot;platformcode&quot;: &quot;0&quot;,
+                    &quot;platformcode&quot;: 0,
                     &quot;trains&quot;: [
                         {
-                            &quot;trainnumber&quot;: &quot;030&quot;,
-                            &quot;tripno&quot;: &quot;8&quot;,
-                            &quot;destcode&quot;: &quot;532&quot;,
+                            &quot;trainnumber&quot;: 30,
+                            &quot;tripno&quot;: 8,
+                            &quot;destcode&quot;: 532,
                             &quot;destination&quot;: &quot;Hainault via Newbury Park&quot;,
                             &quot;timeto&quot;: &quot;1:00&quot;,
                             &quot;location&quot;: &quot;Between Newbury Park and Barkingside&quot;
                         },
                         {
-                            &quot;trainnumber&quot;: &quot;031&quot;,
-                            &quot;tripno&quot;: &quot;9&quot;,
-                            &quot;destcode&quot;: &quot;532&quot;,
+                            &quot;trainnumber&quot;: 31,
+                            &quot;tripno&quot;: 9,
+                            &quot;destcode&quot;: 532,
                             &quot;destination&quot;: &quot;Hainault via Newbury Park&quot;,
                             &quot;timeto&quot;: &quot;2:30&quot;,
                             &quot;location&quot;: &quot;Approaching Newbury Park&quot;
@@ -264,24 +264,24 @@
 }
 </code></pre>
 <ul>
-<li><strong>requesttype</strong><br /> Informational entry just to confirm the type of request made</li>
-<li><strong>created</strong><br /> Original creation date/time of the XML data</li>
-<li><strong>stations</strong><br /> Array grouping any and all stations from the query (summary predictions contain all stations on the line)
+<li><strong>requesttype</strong> - string<br /> Informational entry just to confirm the type of request made</li>
+<li><strong>created</strong> - string<br /> Original creation date/time of the XML data</li>
+<li><strong>stations</strong> - array of object station<br /> Array grouping any and all stations from the query (summary predictions contain all stations on the line)
 <ul>
-<li><strong>stationcode</strong><br /> TfLU code for the station queried</li>
-<li><strong>stationname</strong><br /> Full name of the TfLU station queried</li>
-<li><strong>platforms</strong><br /> Array grouping all platforms of the station for given line (generally two per station)
+<li><strong>stationcode</strong> - string<br /> TfLU code for the station queried</li>
+<li><strong>stationname</strong> - string<br /> Full name of the TfLU station queried</li>
+<li><strong>platforms</strong> - array of object platform<br /> Array grouping all platforms of the station for given line (generally two per station)
 <ul>
-<li><strong>platformname</strong><br /> Full name of the platform (generally containing direction and number)</li>
-<li><strong>platformcode</strong><br /> Code counting from 0 representing the platform</li>
-<li><strong>trains</strong><br /> Array grouping trains predicted to arrive at the given platform within the next thirty minutes
+<li><strong>platformname</strong> - string<br /> Full name of the platform (generally containing direction and number)</li>
+<li><strong>platformcode</strong> - integer<br /> Code counting from 0 representing the platform</li>
+<li><strong>trains</strong> - array of object train<br /> Array grouping trains predicted to arrive at the given platform within the next thirty minutes
 <ul>
-<li><strong>trainnumber</strong><br /> Train number of the train (similar to a flight number, but used for the whole day)</li>
-<li><strong>tripno</strong><br /> Number of trips for the train on the day (255 signifies &quot;no trip&quot;)</li>
-<li><strong>destcode</strong><br /> The identifying code of the destination (0 can mean &quot;Unknown&quot;/&quot;Awaiting confirmation&quot;, 546 signifies &quot;out of service&quot;)</li>
-<li><strong>destination</strong><br /> Intended destination of the train</li>
-<li><strong>timeto</strong><br /> Predicted time in minutes and seconds until train reaches platform ('-' if at platform) rounded to nearest 30 seconds</li>
-<li><strong>location</strong><br /> The current location of the train (&quot;At Platform&quot; if already at the platform)</li>
+<li><strong>trainnumber</strong> - integer<br /> Train number of the train (similar to a flight number, but used for the whole day)</li>
+<li><strong>tripno</strong> - integer<br /> Number of trips for the train on the day (255 signifies &quot;no trip&quot;)</li>
+<li><strong>destcode</strong> - integer<br /> The identifying code of the destination (0 can mean &quot;Unknown&quot;/&quot;Awaiting confirmation&quot;, 546 signifies &quot;out of service&quot;)</li>
+<li><strong>destination</strong> - string<br /> Intended destination of the train</li>
+<li><strong>timeto</strong> - string<br /> Predicted time in minutes and seconds until train reaches platform ('-' if at platform) rounded to nearest 30 seconds</li>
+<li><strong>location</strong> - string<br /> The current location of the train (&quot;At Platform&quot; if already at the platform)</li>
 </ul></li>
 </ul></li>
 </ul></li>
@@ -291,40 +291,40 @@
     &quot;requesttype&quot;: &quot;Line Status&quot;,
     &quot;lines&quot;: [
         {
-            &quot;id&quot;: &quot;0&quot;,
+            &quot;id&quot;: 0,
             &quot;details&quot;: &quot;&quot;,
-            &quot;lineid&quot;: &quot;1&quot;,
+            &quot;lineid&quot;: 1,
             &quot;linename&quot;: &quot;Bakerloo&quot;,
             &quot;statusid&quot;: &quot;GS&quot;,
             &quot;status&quot;: &quot;GoodService&quot;,
             &quot;description&quot;: &quot;Good Service&quot;,
-            &quot;active&quot;: &quot;true&quot;
+            &quot;active&quot;: true
         },
         {
-            &quot;id&quot;: &quot;1&quot;,
+            &quot;id&quot;: 1,
             &quot;details&quot;: &quot;&quot;,
-            &quot;lineid&quot;: &quot;2&quot;,
+            &quot;lineid&quot;: 2,
             &quot;linename&quot;: &quot;Central&quot;,
             &quot;statusid&quot;: &quot;GS&quot;,
             &quot;status&quot;: &quot;GoodService&quot;,
             &quot;description&quot;: &quot;Good Service&quot;,
-            &quot;active&quot;: &quot;true&quot;
+            &quot;active&quot;: true
         }
     ]
 }
 </code></pre>
 <ul>
-<li><strong>requesttype</strong><br /> Informational entry just to confirm the type of request made</li>
-<li><strong>lines</strong><br /> Array grouping all lines from the query (if the query is for incidents only this may contain no entries)
+<li><strong>requesttype</strong> - string<br /> Informational entry just to confirm the type of request made</li>
+<li><strong>lines</strong> - array of object line<br /> Array grouping all lines from the query (if the query is for incidents only this may contain no entries)
 <ul>
-<li><strong>id</strong><br /> Identifier of the line status</li>
-<li><strong>details</strong><br /> Description of the status of the line if the status is not normal, otherwise blank</li>
-<li><strong>lineid</strong><br /> Line code identifier</li>
-<li><strong>linename</strong><br /> Name of the line</li>
-<li><strong>statusid</strong><br /> Two character identifier of the status of the line</li>
-<li><strong>status</strong><br /> Text code representing the general status of the line</li>
-<li><strong>description</strong><br /> Description of the status of the line</li>
-<li><strong>active</strong><br /> Boolean value indicating if status is active (seemingly always true)</li>
+<li><strong>id</strong> - integer<br /> Identifier of the line status</li>
+<li><strong>details</strong> - string<br /> Description of the status of the line if the status is not normal, otherwise blank</li>
+<li><strong>lineid</strong> - integer<br /> Line code identifier</li>
+<li><strong>linename</strong> - string<br /> Name of the line</li>
+<li><strong>statusid</strong> - string<br /> Two character identifier of the status of the line</li>
+<li><strong>status</strong> - string<br /> Text code representing the general status of the line</li>
+<li><strong>description</strong> - string<br /> Description of the status of the line</li>
+<li><strong>active</strong> - boolean<br /> Boolean value indicating if status is active (seemingly always true)</li>
 </ul></li>
 </ul>
 <p>The values of lines[statusid, status, description] all reference the same information, displaying them in different ways.</p>
@@ -339,55 +339,55 @@
     &quot;requesttype&quot;: &quot;Station Status&quot;,
     &quot;stations&quot;: [
         {
-            &quot;id&quot;: &quot;1&quot;,
+            &quot;id&quot;: 1,
             &quot;details&quot;: &quot;&quot;,
             &quot;stationname&quot;: &quot;Acton Town&quot;,
             &quot;statusid&quot;: &quot;O&quot;,
             &quot;status&quot;: &quot;Open&quot;,
             &quot;description&quot;: &quot;Open&quot;,
-            &quot;active&quot;: &quot;false&quot;
+            &quot;active&quot;: false
         },
         {
-            &quot;id&quot;: &quot;2&quot;,
+            &quot;id&quot;: 2,
             &quot;details&quot;: &quot;&quot;,
             &quot;stationname&quot;: &quot;Aldgate&quot;,
             &quot;statusid&quot;: &quot;O&quot;,
             &quot;status&quot;: &quot;Open&quot;,
             &quot;description&quot;: &quot;Open&quot;,
-            &quot;active&quot;: &quot;false&quot;
+            &quot;active&quot;: false
         },
         {
-            &quot;id&quot;: &quot;14&quot;,
+            &quot;id&quot;: 14,
             &quot;details&quot;: &quot;To the platforms due to a faulty lift.&quot;,
             &quot;stationname&quot;: &quot;Barking&quot;,
             &quot;statusid&quot;: &quot;NS&quot;,
             &quot;status&quot;: &quot;Closed&quot;,
             &quot;description&quot;: &quot;No Step Free Access&quot;,
-            &quot;active&quot;: &quot;true&quot;
+            &quot;active&quot;: true
         },
         {
-            &quot;id&quot;: &quot;233&quot;,
+            &quot;id&quot;: 233,
             &quot;details&quot;: &quot;To the Northern line until late November due to planned engineering work.&quot;,
             &quot;stationname&quot;: &quot;Tottenham Court Road&quot;,
             &quot;statusid&quot;: &quot;C&quot;,
             &quot;status&quot;: &quot;Closed&quot;,
             &quot;description&quot;: &quot;Closed&quot;,
-            &quot;active&quot;: &quot;true&quot;
+            &quot;active&quot;: true
         }
     ]
 }
 </code></pre>
 <ul>
-<li><strong>requesttype</strong><br /> Informational entry just to confirm the type of request made</li>
-<li><strong>stations</strong><br /> Array grouping any and all stations from the query (if the query is for incidents only this may contain no entries)
+<li><strong>requesttype</strong> - string<br /> Informational entry just to confirm the type of request made</li>
+<li><strong>stations</strong> - array of object station<br /> Array grouping any and all stations from the query (if the query is for incidents only this may contain no entries)
 <ul>
-<li><strong>id</strong><br /> Identifier of the station (stations seem to be in alphabetical order)</li>
-<li><strong>details</strong><br /> Description of the status of the station if the status is not normal, otherwise blank</li>
-<li><strong>stationname</strong><br /> The name of the station</li>
-<li><strong>statusid</strong> One or two character identifier of the status of the station</li>
-<li><strong>status</strong><br /> Text code representing the general status of the station</li>
-<li><strong>description</strong><br /> Short description of the status of the station</li>
-<li><strong>active</strong><br /> Boolean value indicating if status is active (seemingly always true for an abnormal status)</li>
+<li><strong>id</strong> - integer<br /> Identifier of the station (stations seem to be in alphabetical order)</li>
+<li><strong>details</strong> - string<br /> Description of the status of the station if the status is not normal, otherwise blank</li>
+<li><strong>stationname</strong> - string<br /> The name of the station</li>
+<li><strong>statusid</strong> - string<br /> One or two character identifier of the status of the station</li>
+<li><strong>status</strong> - string<br /> Text code representing the general status of the station</li>
+<li><strong>description</strong> - string<br /> Short description of the status of the station</li>
+<li><strong>active</strong> - boolean<br /> Boolean value indicating if status is active (seemingly always true for an abnormal status)</li>
 </ul></li>
 </ul>
 <p>The values of stations[statusid, status, description] all reference the same information, displaying them in different ways.</p>
@@ -445,15 +445,15 @@
 }
 </code></pre>
 <ul>
-<li><strong>requesttype</strong><br /> Informational entry just to confirm the type of request made</li>
-<li><strong>lines</strong><br /> Array grouping any and all lines from the query
+<li><strong>requesttype</strong> - string<br /> Informational entry just to confirm the type of request made</li>
+<li><strong>lines</strong> - array of object line<br /> Array grouping any and all lines from the query
 <ul>
-<li><strong>linecode</strong><br /> The unique identifying character for a TfLU train line. Used for queries</li>
-<li><strong>linename</strong><br /> The full name of the TfLU train line</li>
-<li><strong>stations</strong><br /> Array grouping any and all stations from the query
+<li><strong>linecode</strong> - string<br /> The unique identifying character for a TfLU train line. Used for queries</li>
+<li><strong>linename</strong> - string<br /> The full name of the TfLU train line</li>
+<li><strong>stations</strong> - array of object station<br /> Array grouping any and all stations from the query
 <ul>
-<li><strong>stationcode</strong><br /> The unique identifying characters for a TfLU train station. Used for queries</li>
-<li><strong>stationname</strong><br /> The full name of the TfLU train station</li>
+<li><strong>stationcode</strong> - string<br /> The unique identifying characters for a TfLU train station. Used for queries</li>
+<li><strong>stationname</strong> - string<br /> The full name of the TfLU train station</li>
 </ul></li>
 </ul></li>
 </ul>
