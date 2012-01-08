@@ -49,7 +49,7 @@ define("INCIDENTS_ONLY", "incidentsonly");
 # Base URL for TfL requests:
 define("BASE_URL", "http://cloud.tfl.gov.uk/trackernet/");
 # Base filename for reading/writing files
-define("BASE_FILE", "./");
+define("BASE_FILE", "./cache/");
 # Default file extension to write file with
 define("FILE_EXTENSION", ".json");
 
