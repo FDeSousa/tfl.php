@@ -25,12 +25,6 @@
 # --------------------------------------------------------------------------------
 # Declarations area below
 $starttime = microtime(true);
-# Declaring some useful constants
-# For use in parsing the URL this script was executed from:
-define("REQUEST", "request");
-define("LINE", "line");
-define("STATION", "station");
-define("INCIDENTS", "incidents");
 
 # URL parameter for request of detailed predictions
 define("PREDICTION_DETAILED", "predictiondetailed");
@@ -65,10 +59,10 @@ $lines_list = array("b" => "Bakerloo",
 					"w" => "Waterloo & City");
 
 # Get the URL parameters:
-$request = strtolower($_GET[REQUEST]);
-$line = strtolower($_GET[LINE]);
-$station = strtolower($_GET[STATION]);
-$incidents_only = (bool) $_GET[INCIDENTS];
+$request = strtolower($_GET["request"]);
+$line = strtolower($_GET["line"]);
+$station = strtolower($_GET["station"]);
+$incidents_only = (bool) $_GET["incidents"];
 $timed = (bool) $_GET["timed"];
 
 # Declarations area finished

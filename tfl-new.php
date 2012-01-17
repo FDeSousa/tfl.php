@@ -95,16 +95,16 @@ function main() {
 			$fetcher = new DetailedPredictions($line, $lines_list, $station);
 			break;
 		case PREDICTION_SUMMARY:
-			$json_out = getSummaryPredictions();
+			$fetcher = new SummaryPredictions($line, $lines_list);
 			break;
 		case LINE_STATUS:
-			$json_out = getLineStatus();
+			$fetcher = new LineStatus($incidents_only);
 			break;
 		case STATION_STATUS:
-			$json_out = getStationStatus();
+			$fetcher = new StationStatus($incidents_only);
 			break;
 		case STATIONS_LIST:
-			$json_out = getStationsList();
+			$fetcher = new StationsList($lines_list);
 			break;
 		default:
 			die("{\"error\":\"No valid request made\"}");
@@ -163,7 +163,7 @@ abstract class TflJsonFetcher {
 	abstract protected function prepare();
 	abstract protected function parse($xml);
 
-	public final function fetch() {
+	public function fetch() {
 		$json = "";
 		# Check if the cache is valid
 		if ($this->validateCache()) {
@@ -351,29 +351,45 @@ class DetailedPredictions extends TflJsonFetcher {
  * @author Filipe De Sousa
  * @version 0.5
  */
-function getSummaryPredictions() {
-	# Get some global variables
-	global $lines_list, $line;
+class SummaryPredictions extends TflJsonFetcher {
+	# Declare expiry time for cache in seconds
+	const __expiry_time = 30;
+	# Declare some private variables
+	private $line, $lines_list;
 
-	# Set the right header information
-	header('Content-Type: application/json');
-	header('Cache-Control: public, max-age=30');
+	public function __construct($line, $lines_list) {
+		parent::__construct(self::__expiry_time, "Summary Predictions", self::make_file_name($line, $lines_list));
+		$this->line = $line;
+		$this->lines_list = $lines_list;
+	}
 
-	# Set the right header information
-	header('Content-Type: application/json');
-	header('Cache-Control: public, max-age=30');
+	private static function make_file_name($line, $lines_list) {
+		# Construct the filename for output
+		$filename = BASE_FILE . PREDICTION_SUMMARY . "/";
+		# Check line isn't empty, and line code is valid
+		if ($line != null and array_key_exists($line, $lines_list) !== false) {
+			$filename .= $line . FILE_EXTENSION;
+		} else { # Fail fast if the line code is invalid/missing
+			die("{\"error\":\"Invalid line code\"}");
+		}
+		return $filename;
+	}
 
-	# Create the output array now, with information on request type
-	$out_arr = array("requesttype" => "Summary Predictions");
+	protected function prepare() {
+		# Build the url to then fetch the XML
+		$url = BASE_URL . PREDICTION_SUMMARY . "/" . $this->line;
+		# Now return the result of the call to getXml()
+		return parent::getXml($url);
+	}
 
 	/**
 	 * Method to get and return the broken-down, edited XML elements from
 	 * the TfL feed for summary train predictions.
-	 * Only need this function to be used within getSummaryPredictions function
+	 * Only need this function to be used within SummaryPredictions class
 	 * @return Array containing the broken-down XML tags
 	 * @author Filipe De Sousa
-	 */
-	function parseSummaryPredictionsXml($xml) {
+	 **/
+	protected function parse($xml) {
 		// Get the XML data from the feed, break it down
 		$arr = array("created" => (string) $xml->Time["TimeStamp"],
 					"stations" => array());
@@ -401,41 +417,6 @@ function getSummaryPredictions() {
 		}
 		return $arr;
 	}
-
-	# Construct the filename for output
-	$filename = BASE_FILE . PREDICTION_SUMMARY;
-	# Directory has been named, check if it exists, or create it
-	if (! is_dir($filename)) {
-		# rwx access only for _www, recursively created folders
-		mkdir($filename, 0755, true);
-	}
-	# Check line isn't empty, and line code is valid
-	if ($line != null and array_key_exists($line, $lines_list) !== false) {
-		$filename .= "/" . $line . FILE_EXTENSION;
-	} else {
-		# If not, just kill off execution now
-		die("{\"error\":\"Invalid line code\"}");
-	}
-	$url = BASE_URL . PREDICTION_SUMMARY . "/" . $line;
-
-	# Determine if the cache is valid (30 seconds)
-	if (parent::validateCache($filename, 30)) {
-		# If so, return the cached file's contents
-		return file_get_contents($filename);
-	}
-
-	# Otherwise, get XML from the URL
-	$xml = getXml($url);
-
-	# Parse the XML into our array
-	$out_arr = array_merge($out_arr, parseSummaryPredictionsXml($xml));
-	$json_a = json_encode($out_arr, true);
-
-	# Write out data to file
-	parent::writeToCacheFile($filename, $json_a);
-
-	# Return the json
-	return $json_a;
 }
 
 /**
@@ -446,25 +427,52 @@ function getSummaryPredictions() {
  * @author Filipe De Sousa
  * @version 0.5
  */
-function getLineStatus() {
-	# Get some global variables
-	global $incidents_only;
+class LineStatus extends TflJsonFetcher {
+	# Declare expiry time for cache in seconds
+	const __expiry_time = 30;
+	# Declare some private variables
+	private $incidentsonly;
 
-	# Create the output array now, with information on request type
-	$out_arr = array("requesttype" => "Line Status");
+	public function __construct($incidents_only) {
+		parent::__construct(self::__expiry_time, "Line Status", self::make_file_name($incidents_only));
+		$this->incidentsonly = $incidents_only;
+	}
 
-	# Set the right header information
-	header('Content-Type: application/json');
-	header('Cache-Control: public, max-age=30');
+	private static function make_file_name($incidents_only) {
+		# Construct the filename for output
+		$filename = BASE_FILE . LINE_STATUS;
+
+		if ($incidents_only) {
+			$filename .= "/" . INCIDENTS_ONLY;
+		} else {
+			$filename .= "/full";
+		}
+
+		$filename .= FILE_EXTENSION;
+
+		return $filename;
+	}
+
+	protected function prepare() {
+		# Build the url to then fetch the XML
+		$url = BASE_URL . LINE_STATUS;
+
+		if ($this->incidentsonly) {
+			$url .= "/" . INCIDENTS_ONLY;
+		}
+
+		# Now return the result of the call to getXml()
+		return parent::getXml($url);
+	}
 
 	/**
 	 * Method to get and return the broken-down, edited XML elements from
-	 * the TfL feed for line status.
-	 * Only need this function to be used within getLineStatus function
+	 * the TfL feed for detailed train predictions.
+	 * Only need this function to be used within getDetailedPredictions function
 	 * @return Array containing the broken-down XML tags
 	 * @author Filipe De Sousa
 	 */
-	function parseLineStatusXml($xml) {
+	protected function parse($xml) {
 		// Get the XML data from the feed, break it down
 		$arr = array("lines" => array());
 
@@ -481,46 +489,6 @@ function getLineStatus() {
 		}
 		return $arr;
 	}
-
-	# Construct the filename for output
-	$filename = BASE_FILE . LINE_STATUS;
-	# At the same time, construct the URL
-	$url = BASE_URL . LINE_STATUS;
-
-	# Directory has been named, check if it exists, or create it
-	if (! is_dir($filename)) {
-		# rwx access only for _www, recursively created folders
-		mkdir($filename, 0755, true);
-	}
-	if ($incidents_only) {
-		# If we only want incidents, file name is "incidents.json"
-		$filename .= "/incidents";
-		# And the URL has /incidentsonly on the end
-		$url .= "/" . INCIDENTS_ONLY;
-	} else {
-		# Otherwise, file name is "full.json"
-		$filename .= "/full";
-	}
-	$filename .= FILE_EXTENSION;
-
-	# Determine if the cache is valid (30 seconds)
-	if (parent::validateCache($filename, 30)) {
-		# If so, return the cached file's contents
-		return file_get_contents($filename);
-	}
-
-	# Otherwise, get XML from the URL
-	$xml = getXml($url);
-
-	# Parse the XML into our array
-	$out_arr = array_merge($out_arr, parseLineStatusXml($xml));
-	$json_a = json_encode($out_arr, true);
-
-	# Write out data to file
-	parent::writeToCacheFile($filename, $json_a);
-
-	# Return the json
-	return $json_a;
 }
 
 /**
@@ -531,25 +499,52 @@ function getLineStatus() {
  * @author Filipe De Sousa
  * @version 0.5
  */
-function getStationStatus() {
-	# Get some global variables
-	global $incidents_only;
+class StationStatus extends TflJsonFetcher {
+	# Declare expiry time for cache in seconds
+	const __expiry_time = 30;
+	# Declare some private variables
+	private $incidentsonly;
 
-	# Create the output array now, with information on request type
-	$out_arr = array("requesttype" => "Station Status");
+	public function __construct($incidents_only) {
+		parent::__construct(self::__expiry_time, "Station Status", self::make_file_name($incidents_only));
+		$this->incidentsonly = $incidents_only;
+	}
 
-	# Set the right header information
-	header('Content-Type: application/json');
-	header('Cache-Control: public, max-age=30');
+	private static function make_file_name($incidents_only) {
+		# Construct the filename for output
+		$filename = BASE_FILE . STATION_STATUS;
+
+		if ($incidents_only) {
+			$filename .= "/" . INCIDENTS_ONLY;
+		} else {
+			$filename .= "/full";
+		}
+
+		$filename .= FILE_EXTENSION;
+
+		return $filename;
+	}
+
+	protected function prepare() {
+		# Build the url to then fetch the XML
+		$url = BASE_URL . STATION_STATUS;
+
+		if ($this->incidentsonly) {
+			$url .= "/" . INCIDENTS_ONLY;
+		}
+
+		# Now return the result of the call to getXml()
+		return parent::getXml($url);
+	}
 
 	/**
 	 * Method to get and return the broken-down, edited XML elements from
-	 * the TfL feed for station status.
-	 * Only need this function to be used within getStationStatus function
+	 * the TfL feed for detailed train predictions.
+	 * Only need this function to be used within getDetailedPredictions function
 	 * @return Array containing the broken-down XML tags
 	 * @author Filipe De Sousa
 	 */
-	function parseStationStatusXml($xml) {
+	protected function parse($xml) {
 		// Get the XML data from the feed, break it down
 		$arr = array("stations" => array());
 
@@ -565,46 +560,6 @@ function getStationStatus() {
 		}
 		return $arr;
 	}
-
-	# Construct the filename for output
-	$filename = BASE_FILE . STATION_STATUS;
-	# At the same time, construct the URL
-	$url = BASE_URL . STATION_STATUS;
-
-	# Directory has been named, check if it exists, or create it
-	if (! is_dir($filename)) {
-		# rwx access only for _www, recursively created folders
-		mkdir($filename, 0755, true);
-	}
-	if ($incidents_only) {
-		# If we only want incidents, file name is "incidents.json"
-		$filename .= "/incidents";
-		# And the URL has /incidentsonly on the end
-		$url .= "/" . INCIDENTS_ONLY;
-	} else {
-		# Otherwise, file name is "full.json"
-		$filename .= "/full";
-	}
-	$filename .= FILE_EXTENSION;
-
-	# Determine if the cache is valid (30 seconds)
-	if (parent::validateCache($filename, 30)) {
-		# If so, return the cached file's contents
-		return file_get_contents($filename);
-	}
-
-	# Otherwise, get XML from the URL
-	$xml = getXml($url);
-
-	# Parse the XML into our array
-	$out_arr = array_merge($out_arr, parseStationStatusXml($xml));
-	$json_a = json_encode($out_arr, true);
-
-	# Write out data to file
-	parent::writeToCacheFile($filename, $json_a);
-
-	# Return the json
-	return $json_a;
 }
 
 /**
@@ -615,26 +570,39 @@ function getStationStatus() {
  * @author Filipe De Sousa
  * @version 0.5
  */
-function getStationsList() {
-	# Get some global variables
-	global $lines_list;
+class StationsList extends TflJsonFetcher {
+	# Declare expiry time for cache in seconds
+	const __expiry_time = 604800;
+	# Declare some private variables
+	private $lines_list, $line;
 
-	# Set the right header information
-	header('Content-Type: application/json');
-	header('Cache-Control: public, max-age=604800');
+	public function __construct($lines_list) {
+		parent::__construct(self::__expiry_time, "Stations List", self::make_file_name());
+		$this->lines_list = $lines_list;
+	}
 
-	# Create the output array now, with information on request type
-	$out_arr = array("requesttype" => "Stations List",
-					"lines" => array());
+	private static function make_file_name() {
+		# Construct the filename for output
+		$filename = BASE_FILE . STATIONS_LIST . FILE_EXTENSION;
+
+		return $filename;
+	}
+
+	protected function prepare() {
+		# Build the url to then fetch the XML
+		$url = BASE_URL . PREDICTION_SUMMARY . "/" . $this->line;
+		# Now return the result of the call to getXml()
+		return parent::getXml($url);
+	}
 
 	/**
 	 * Method to get and return the broken-down, edited XML elements from
-	 * the TfL feed for summary train predictions. Takes out most of the tags.
-	 * Only need this function to be used within getStationsList function
+	 * the TfL feed for detailed train predictions.
+	 * Only need this function to be used within getDetailedPredictions function
 	 * @return Array containing the broken-down XML tags
 	 * @author Filipe De Sousa
 	 */
-	function parseStationsListXml($xml) {
+	protected function parse($xml) {
 		// Get the XML data from the feed, break it down
 		$arr = array();
 
@@ -646,33 +614,31 @@ function getStationsList() {
 		return $arr;
 	}
 
-	# Construct the filename for output
-	$filename = BASE_FILE . STATIONS_LIST . FILE_EXTENSION;
-
-	# Determine if the cache is valid (7 days in seconds)
-	if (parent::validateCache($filename, 604800)) {
-		# If so, return the cached file's contents
-		return file_get_contents($filename);
+	# Stations List is a special case, so override it within the class
+	public function fetch() {
+		$json = "";
+		# Check if the cache is valid
+		if (parent::validateCache()) {
+			# If so, read in from the cache file
+			$json = file_get_contents($this->filename);
+		} else {
+			foreach ($this->lines_list as $code => $name) {
+				$this->line = $code;
+				# Call the prepare function, fetching the XML
+				$xml = $this->prepare();
+				$line_arr = array("linecode" => $code,
+								"linename" => $name,
+								"stations" => $this->parse($xml));
+				# Add the working array to our lines array
+				$this->out_arr["lines"][] = $line_arr;
+			}
+			# Encode the array into JSON
+			$json = json_encode($this->out_arr, true);
+			# Write newest version to cache
+			$this->writeToCacheFile($json);
+		}
+		return $json;
 	}
-
-	foreach ($lines_list as $code => $name) {
-		$line = array("linecode" => $code,
-					"linename" => $name);
-		$url = BASE_URL . PREDICTION_SUMMARY . "/" . $code;
-		# Get the XML for parsing
-		$xml = getXml($url);
-		# Parse it into our working array
-		$line["stations"] = parseStationsListXml($xml);
-		# Add the working array to our lines array
-		$out_arr["lines"][] = $line;
-	}
-	$json_a = json_encode($out_arr, true);
-
-	# Write out data to file
-	parent::writeToCacheFile($filename, $json_a);
-
-	# Return the json
-	return $json_a;
 }
 
 # End of functions area, you may let down your shield now
