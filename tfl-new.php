@@ -5,7 +5,7 @@
  * @author Filipe De Sousa
  * @version 0.5
  * @license Apache 2.0
- */
+ **/
 
 /******************************************************************************
  * Copyright 2012 Filipe De Sousa
@@ -66,14 +66,13 @@ $request = strtolower($_GET["request"]);
 $line = strtolower($_GET["line"]);
 $station = strtolower($_GET["station"]);
 $incidents_only = (bool) $_GET["incidents"];
-$timed = (bool) $_GET["timed"];
 
 // Declarations area finished
 // --------------------------------------------------------------------------------
 // Command execution area
 
 // Just execute our main function and be done with it
-main($request, $line, $station, $incidents_only, $timed, $starttime, $lines_list);
+main($request, $line, $station, $incidents_only, $starttime, $lines_list);
 
 // Takes just one line to get the program started fetching/parsing requests
 // --------------------------------------------------------------------------------
@@ -85,7 +84,7 @@ main($request, $line, $station, $incidents_only, $timed, $starttime, $lines_list
  * @param none
  * @return null
  */
-function main($request, $line, $station, $incidents_only, $timed, $starttime, $lines_list) {
+function main($request, $line, $station, $incidents_only, $starttime, $lines_list) {
 	$fetcher;
 	$json_out;
 
@@ -106,19 +105,16 @@ function main($request, $line, $station, $incidents_only, $timed, $starttime, $l
 			$fetcher = new StationsList($lines_list);
 			break;
 		default:
+			header(StatusCodes::httpHeaderFor(StatusCodes::HTTP_BAD_REQUEST));
 			die("{\"error\":\"No valid request made\"}");
 	}
 
-	// Original method of adding the processingtime made invalid JSON (woops!)
-	if ($timed) {
-		$json_a = json_decode($json_out, true);
-		$json_a["processingtime"] = (microtime(true) - $starttime);
-		$json_out = json_encode($json_a);
-	}
+	//	Fetch and parse
+	$json_out = $fetcher->fetch();
 
+	// Set the right header information before echoing
+	header("Content-Type: application/json");
 	echobig($json_out);
-
-	echobig($fetcher->fetch());
 }
 
 /**
@@ -167,10 +163,6 @@ abstract class TflJsonFetcher {
 
 		// Instantiate the array, adding request type and request name
 		$this->out_arr = array("requesttype" => "{$request_name}");
-
-		// Set the right header information
-		header("Content-Type: application/json");
-		header("Cache-Control: public, max-age={$this->expiretime}");
 	}
 
 	abstract protected function prepare();
@@ -248,20 +240,32 @@ abstract class TflJsonFetcher {
 	protected static final function getXml($url) {
 		// Since we must use curl, initialise its handler
 		$ch = curl_init();
+
 		// Setup curl with our options
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($ch, CURLOPT_URL, $url);
 
-		// Register a callback function to process return header
-		curl_setopt($ch, CURLOPT_HEADERFUNCTION, array(&$this,'handleHeader'));
-		curl_setopt($ch, CURLOPT_HTTPHEADER, array("Expect:"));
-
 		// Get the source with curl
 		$source = curl_exec($ch);
+
+		if (curl_errno($ch)) {
+			die("{\"error\":\"" . curl_error($ch) . "\"}");
+		} else {
+			// Get HTTP response code to check for issues
+			$h = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+			if (StatusCodes::isError($h) || !StatusCodes::canHaveBody($h)) {
+				$err = StatusCodes::httpHeaderFor($h);
+				header($err);
+				die("{\"error\":\"" . $err . "\"}");
+			}
+		}
+
 		// Close up curl, no longer needed
 		curl_close($ch);
-		// Parse our xml
+
+		// Read the XML string into an object
 		$xml = simpleXML_load_string($source);
+
 		// Return it
 		return $xml;
 	}
@@ -307,12 +311,14 @@ class DetailedPredictions extends TflJsonFetcher {
 		if ($line != null and array_key_exists($line, $lines_list) !== false) {
 			$filename .= $line;
 		} else { // Fail fast if the line code is invalid/missing
+			header(StatusCodes::httpHeaderFor(StatusCodes::HTTP_BAD_REQUEST));
 			die("{\"error\":\"Invalid line code\"}");
 		}
 		// Now add the station code to the filename
 		if ($station != null) {
 			$filename .= DIV . $station . FILE_EXTENSION;
 		} else { // Fail fast if the station code is missing
+			header(StatusCodes::httpHeaderFor(StatusCodes::HTTP_BAD_REQUEST));
 			die("{\"error\":\"Missing station code\"}");
 		}
 		return $filename;
@@ -412,6 +418,7 @@ class SummaryPredictions extends TflJsonFetcher {
 		if ($line != null and array_key_exists($line, $lines_list) !== false) {
 			$filename .= $line . FILE_EXTENSION;
 		} else { // Fail fast if the line code is invalid/missing
+			header(StatusCodes::httpHeaderFor(StatusCodes::HTTP_BAD_REQUEST));
 			die("{\"error\":\"Invalid line code\"}");
 		}
 		return $filename;
@@ -740,11 +747,11 @@ class StatusCodes {
     // [Informational 1xx]
     const HTTP_CONTINUE = 100, HTTP_SWITCHING_PROTOCOLS = 101;
     // [Successful 2xx]
-    const HTTP_OK = 200, HTTP_CREATED = 201, HTTP_ACCEPTED = 202,HTTP_NONAUTHORITATIVE_INFORMATION = 203, HTTP_NO_CONTENT = 204, HTTP_RESET_CONTENT = 205, HTTP_PARTIAL_CONTENT = 206;
+    const HTTP_OK = 200, HTTP_CREATED = 201, HTTP_ACCEPTED = 202, HTTP_NONAUTHORITATIVE_INFORMATION = 203, HTTP_NO_CONTENT = 204, HTTP_RESET_CONTENT = 205, HTTP_PARTIAL_CONTENT = 206;
     // [Redirection 3xx]
     const HTTP_MULTIPLE_CHOICES = 300, HTTP_MOVED_PERMANENTLY = 301, HTTP_FOUND = 302, HTTP_SEE_OTHER = 303, HTTP_NOT_MODIFIED = 304, HTTP_USE_PROXY = 305, HTTP_UNUSED= 306, HTTP_TEMPORARY_REDIRECT = 307;
     // [Client Error 4xx]
-    const errorCodesBeginAt = 400, HTTP_BAD_REQUEST = 400, HTTP_UNAUTHORIZED  = 401, HTTP_PAYMENT_REQUIRED = 402, HTTP_FORBIDDEN = 403, HTTP_NOT_FOUND = 404, HTTP_METHOD_NOT_ALLOWED = 405, HTTP_NOT_ACCEPTABLE = 406, HTTP_PROXY_AUTHENTICATION_REQUIRED = 407, HTTP_REQUEST_TIMEOUT = 408, HTTP_CONFLICT = 409, HTTP_GONE = 410, HTTP_LENGTH_REQUIRED = 411, HTTP_PRECONDITION_FAILED = 412, HTTP_REQUEST_ENTITY_TOO_LARGE = 413, HTTP_REQUEST_URI_TOO_LONG = 414, HTTP_UNSUPPORTED_MEDIA_TYPE = 415, HTTP_REQUESTED_RANGE_NOT_SATISFIABLE = 416, HTTP_EXPECTATION_FAILED = 417;
+    const errorCodesBeginAt = 400, HTTP_BAD_REQUEST = 400, HTTP_UNAUTHORIZED = 401, HTTP_PAYMENT_REQUIRED = 402, HTTP_FORBIDDEN = 403, HTTP_NOT_FOUND = 404, HTTP_METHOD_NOT_ALLOWED = 405, HTTP_NOT_ACCEPTABLE = 406, HTTP_PROXY_AUTHENTICATION_REQUIRED = 407, HTTP_REQUEST_TIMEOUT = 408, HTTP_CONFLICT = 409, HTTP_GONE = 410, HTTP_LENGTH_REQUIRED = 411, HTTP_PRECONDITION_FAILED = 412, HTTP_REQUEST_ENTITY_TOO_LARGE = 413, HTTP_REQUEST_URI_TOO_LONG = 414, HTTP_UNSUPPORTED_MEDIA_TYPE = 415, HTTP_REQUESTED_RANGE_NOT_SATISFIABLE = 416, HTTP_EXPECTATION_FAILED = 417;
     // [Server Error 5xx]
     const HTTP_INTERNAL_SERVER_ERROR = 500, HTTP_NOT_IMPLEMENTED = 501, HTTP_BAD_GATEWAY = 502, HTTP_SERVICE_UNAVAILABLE = 503, HTTP_GATEWAY_TIMEOUT = 504, HTTP_VERSION_NOT_SUPPORTED = 505;
 
