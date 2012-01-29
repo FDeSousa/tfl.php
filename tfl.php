@@ -647,7 +647,7 @@ class StationStatus extends TflJsonFetcher {
  */
 class StationsList extends TflJsonFetcher {
 	// Declare expiry time for cache in seconds - eight weeks in seconds
-	const __expiry_time = 8 * 7 * 24 * 60 * 60;
+	const __expiry_time = 4838400;
 	// Declare some private variables
 	private $lines_list, $line;
 
