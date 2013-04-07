@@ -1,40 +1,11 @@
 #!/usr/bin/python
-from abc import ABCMeta, abstractmethod
-from datetime import datetime
-import cgi
-import cgitb
-import json
-cgitb.enable()
-# cgitb.enable(display=0, logdir="./")
 
-START_TIME = datetime.now()
-PREDICTION_DETAILED = "predictiondetailed"
-PREDICTION_SUMMARY = "predictionsummary"
-LINE_STATUS = "linestatus"
-STATION_STATUS = "stationstatus"
-STATIONS_LIST = "stationslist"
-INCIDENTS_ONLY = "incidentsonly"
-BASE_URL = "http://cloud.tfl.gov.uk/trackernet/"
-BASE_FILE = "./cache/"
-DIV = "/"
-FILE_EXTENSION = ".json"
-
-LINES_LIST = {
-    'b': 'Bakerloo',
-    'c': 'Central',
-    'd': 'District',
-    'h': 'Hammersmith & Circle',
-    'j': 'Jubilee',
-    'm': 'Metropolitan',
-    'n': 'Northern',
-    'p': 'Piccadilly',
-    'v': 'Victoria',
-    'w': 'Waterloo & City'
-}
+from collections import namedtuple
 
 class StatusCodes(object):
     """StatusCodes enumeration"""
     _statuscode = namedtuple('StatusCode', ('code', 'message'))
+
     # Informational 1xx
     HTTP_CONTINUE = _statuscode(100, 'Continue')
     HTTP_SWITCHING_PROTOCOLS = _statuscode(101, 'Switching Protocols',)
@@ -94,7 +65,7 @@ class StatusCodes(object):
         # Redirection 3xx
         300: HTTP_MULTIPLE_CHOICES, 301: HTTP_MOVED_PERMANENTLY,
         302: HTTP_FOUND, 303: HTTP_SEE_OTHER, 304: HTTP_NOT_MODIFIED,
-        305: HTTP_USE_PROXY, 306: HTTP_UNUSE, 307: HTTP_TEMPORARY_REDIRECT,
+        305: HTTP_USE_PROXY, 306: HTTP_UNUSED, 307: HTTP_TEMPORARY_REDIRECT,
         # Client Error 4xx
         400: HTTP_BAD_REQUEST, 401: HTTP_UNAUTHORIZED,
         402: HTTP_PAYMENT_REQUIRED, 403: HTTP_FORBIDDEN, 404: HTTP_NOT_FOUND,
@@ -122,8 +93,8 @@ class StatusCodes(object):
     def CanHaveBody(cls, code):
         if code not in cls.status_codes:
             raise ValueError("Not expecting '{}'".format(code))
-        return ((code < cls.HTTP_CONTINUE.code || code >= cls.HTTP_OK.code) and
-                code != cls.HTTP_NO_CONTENT.code &&
+        return ((code < cls.HTTP_CONTINUE.code or code >= cls.HTTP_OK.code) and
+                code != cls.HTTP_NO_CONTENT.code and
                 code != cls.HTTP_NOT_MODIFIED.code)
 
     @classmethod
@@ -132,36 +103,3 @@ class StatusCodes(object):
             raise ValueError("Not expecting '{}'".format(code))
         return code >= cls.ERROR_CODES_BEGIN_AT
 
-
-class BaseQuery(object):
-    __metaclass__ = ABCMeta
-
-
-def arguments():
-    d = {
-         'request': '',
-         'line': '',
-         'station': '',
-         'incidents': ''
-        }
-    form = cgi.FieldStorage()   # Parse query
-    if 'request' in form and form['request'].value:
-        d['request'] = form['request'].value
-    if 'line' in form and form['line'].value:
-        d['line'] = form['line'].value
-    if 'station' in form and form['station'].value:
-        d['station'] = form['station'].value
-    if 'incidents' in form and form['incidents'].value:
-        d['incidents'] = form['incidents'].value
-    return d
-
-def main():
-    print("Content-Type: application/json")
-    print("")
-
-    print('{\n')
-    for k, v in arguments().items():
-        print('\t{0}: {1}'.format(k, v))
-    print('}')
-
-main()

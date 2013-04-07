@@ -6,3 +6,26 @@ stationslist
 *.json
 
 .DS_Store
+tfl-dls/bus_stops_example.csv
+tfl-dls/convertingcoordinatesEN.pdf
+tfl-dls/syndication-developer-guidelines-bus-stop-locations-routes.pdf
+TfL/b.xml
+TfL/c.xml
+TfL/d.xml
+TfL/getStations.py
+TfL/h.xml
+TfL/j.xml
+TfL/m.xml
+TfL/n.xml
+TfL/p.xml
+TfL/samples/lines-stations.xml
+TfL/samples/sample.xml
+TfL/samples/tfl.xml
+TfL/samples/tfl2.xml
+TfL/samples/tfl3.xml
+TfL/samples/tflBakerlooSum.xml
+TfL/samples/tflLineStatus.xml
+TfL/samples/tflStationStatus.xml
+TfL/samples/tflSummary.xml
+TfL/samples/tflSummary2.xml
+TfL/w.xml
