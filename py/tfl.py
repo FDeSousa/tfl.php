@@ -1,17 +1,15 @@
 #!/usr/bin/python
 
+from __future__ import print_function
+
 from datetime import datetime
 import cgi
 import cgitb
-
 import query
 import status
 
-cgitb.enable()
-# cgitb.enable(display=0, logdir="./")
-
-START_TIME = datetime.now()
-
+# cgitb.enable()
+cgitb.enable(display=1)
 
 # Queries for parse_args
 QUERIES = {
@@ -23,21 +21,40 @@ QUERIES = {
 }
 
 def parse_query(form):
-    request = form.getfirst(query.REQUEST).value
-    query_class = QUERIES.get(request)
-    if query_class:
-        query_inst = query_class(form)
-        return query_inst
+    request = form.getfirst(query.REQUEST)
+    if request:
+        start_time = datetime.now()
+        query_class = QUERIES.get(request)
+
+        if query_class:
+            query_inst = query_class(form)
+            return query_inst
+        else:
+            raise status.RequestError(status.StatusCodes.HTTP_BAD_REQUEST,
+                                      "Invalid request '{}'".format(request))
     else:
-        raise ValueError("Invalid request '{}'".format(request))
+        raise status.RequestError(status.StatusCodes.HTTP_BAD_REQUEST,
+                                  "Invalid empty request")
+
+def print_big(content, buffersize=8192):
+    content = str(content)
+
+    for l in range(0, len(content) + 1, buffersize):
+        print(content[l:l + buffersize], end='')
 
 def main():
-    print "Content-Type: application/json\n"
+    try:
+        form = cgi.FieldStorage()
+        req = parse_query(form)
+        resp = req.fetch()
 
-    form = cgi.FieldStorage()
-    req = parse_query(form)
-    resp = req.fetch()
+        print_big("Content-Type: application/json\n\n" + resp)
+    except (status.RequestError, status.ResponseError) as re:
+        print_big("Content-Type: text/html\n" + re.httpheader + "\n")
+        if re.canhavebody and re.message:
+            print_big(re.message)
+    except Exception as e:
+        cgitb.handler()
 
-    print resp
-
-main()
+if __name__ == '__main__':
+    main()

@@ -1,9 +1,13 @@
 #!/usr/bin/python
 
+from __future__ import print_function
+
 from abc import ABCMeta, abstractmethod
-import urllib2
-import json
 import errno
+import json
+import os
+import status
+import urllib2
 
 try:
     import xml.etree.cElementTree as etree
@@ -55,6 +59,7 @@ class BaseQuery(object):
 
     query = ""
     cache_expiry_time = 0
+    xmlns = "http://trackernet.lul.co.uk"
 
     def __init__(self, form):
         self.request_url = self._process_request(form)
@@ -72,9 +77,12 @@ class BaseQuery(object):
     def _parse_xml(self, xml):
         return NotImplemented
 
-    def _get_xml(self):
+    def _request(self):
         req = urllib2.Request(self.request_url)
-        res = urllib2.urlopen(req)
+        res = urllib2.urlopen(req, timeout=10)
+        return res
+
+    def _get_xml(self, res):
         xml = etree.parse(res)
         resp = self._parse_xml(xml)
         return resp
@@ -85,8 +93,8 @@ class BaseQuery(object):
             with open(self.cache_filename) as cf:
                 cached = cf.read()
             return cached
-        except IOError as ioe:
-            if ioe.errno == errno.ENOENT:
+        except (IOError, OSError) as e:
+            if e.errno == errno.ENOENT:
                 return None
             else:
                 raise
@@ -95,23 +103,23 @@ class BaseQuery(object):
         foldername = os.path.dirname(filename)
         try:
             os.makedirs(foldername)
-        except IOError as ioe:
+        except (IOError, OSError) as e:
             pass
 
     def _write_json(self, json):
         retry = True
-        attempts = 0
+        retries = 0
 
         while retry:
             try:
                 with open(self.cache_filename, 'w') as cf:
                     cf.write(json)
                 retry = False
-            except IOError as ioe:
-                if ioe.errno == errno.ENOENT:
-                    if attempts < 3:
+            except (IOError, OSError) as e:
+                if e.errno == errno.ENOENT:
+                    if retries <= 3:
                         retry = True
-                        attempts += 1
+                        retries += 1
                         self._make_folders(self.cache_filename)
                 else:
                     retry = False
@@ -121,7 +129,15 @@ class BaseQuery(object):
         cached = self._get_cache()
 
         if cached is None:
-            resp = self._get_xml()
+            res = self._request()
+
+            statuscode = status.StatusCodes.getstatuscode(int(res.getcode()))
+            if statuscode.iserror:
+                raise status.ResponseError(statuscode, 'Failed to fetch XML')
+            elif not statuscode.canhavebody:
+                raise status.ResponseError(statuscode, 'No content in response')
+
+            resp = self._get_xml(res)
             resp_json = json.dumps(resp)
             self._write_json(resp_json)
         else:
@@ -137,15 +153,21 @@ class DetailedPredictionQuery(BaseQuery):
 
     def __init__(self, form):
         super(DetailedPredictionQuery, self).__init__(form)
+        # Namespace-qualified tags
+        self.created_tag = etree.QName(self.xmlns, 'WhenCreated').text
+        self.line_tag = etree.QName(self.xmlns, 'Line').text
+        self.linename_tag = etree.QName(self.xmlns, 'LineName').text
+        self.station_tag = etree.QName(self.xmlns, 'S').text
+        self.platform_tag = etree.QName(self.xmlns, 'P').text
+        self.train_tag = etree.QName(self.xmlns, 'T').text
 
     def _process_request(self, form):
-        request = form.getfirst(REQUEST).value
-        line = form.getfirst(LINE).value
-        station = form.getfirst(STATION).value
+        line = form.getfirst(LINE)
+        station = form.getfirst(STATION)
 
         if line not in LINES_LIST:
             raise ValueError("Line code '%s' is not valid" % line)
-        if station: # No stations list to check against, so just check not-empty
+        if not station:
             raise ValueError("Station code is empty")
 
         request_url = "{0}/{1}/{2}/{3}".format(BASE_URL, self.query,
@@ -153,12 +175,12 @@ class DetailedPredictionQuery(BaseQuery):
         return request_url
 
     def _make_filename(self, form):
-        line = form.getfirst(LINE).value
-        station = form.getfirst(STATION).value
+        line = form.getfirst(LINE)
+        station = form.getfirst(STATION)
 
         if line not in LINES_LIST:
             raise ValueError("Line code '%s' is not valid" % line)
-        if station: # No stations list to check against, so just check not-empty
+        if not station:
             raise ValueError("Station code is empty")
 
         cache_filename = os.path.join('.', BASE_FILE, self.query, line, station)
@@ -166,7 +188,46 @@ class DetailedPredictionQuery(BaseQuery):
         return cache_filename + FILE_EXTENSION
 
     def _parse_xml(self, xml):
-        pass
+        root = xml.getroot()
+
+        resp = {
+            'information': {
+                # Informational parts of response
+                'created': root.find(self.created_tag).text,
+                'linecode': root.find(self.line_tag).text,
+                'linename': root.find(self.linename_tag).text,
+                'stations': [
+                    # List of Stations
+                    {
+                        'stationcode': station.attrib['Code'],
+                        'stationname': station.attrib['N'],
+                        'platforms': [
+                            # List of Platforms for a Station
+                            {
+                                'platformname': platform.attrib['N'],
+                                'platformnumber': platform.attrib['Num'],
+                                'trains': [
+                                    # List of Trains for a Platform
+                                    {
+                                        'lcid': train.attrib['LCID'],
+                                        'timeto': train.attrib['SecondsTo'],
+                                        'location': train.attrib['TimeTo'],
+                                        'destination': train.attrib['Destination'],
+                                        'destcode': train.attrib['DestCode'],
+                                        'tripno': train.attrib['TripNo']
+                                    }
+                                    for train in platform.findall(self.train_tag)
+                                ] # End of trains list comprehension
+                            }
+                            for platform in station.findall(self.platform_tag)
+                        ] # End of platforms list comprehension
+                    }
+                    for station in root.findall(self.station_tag)
+                ] # End of stations list comprehension
+            }
+        }
+
+        return resp
 
 
 class SummaryPredictionQuery(BaseQuery):
@@ -178,8 +239,8 @@ class SummaryPredictionQuery(BaseQuery):
         super(SummaryPredictionQuery, self).__init__(form)
 
     def _process_request(self, form):
-        request = form.getfirst(REQUEST).value
-        line = form.getfirst(LINE).value
+        request = form.getfirst(REQUEST)
+        line = form.getfirst(LINE)
 
         if line not in LINES_LIST:
             raise ValueError("Line code '%s' is not valid" % line)
@@ -188,7 +249,7 @@ class SummaryPredictionQuery(BaseQuery):
         return request_url
 
     def _make_filename(self, form):
-        line = form.getfirst(LINE).value
+        line = form.getfirst(LINE)
 
         if line not in LINES_LIST:
             raise ValueError("Line code '%s' is not valid" % line)
@@ -210,7 +271,7 @@ class LineStatusQuery(BaseQuery):
         super(LineStatusQuery, self).__init__(form)
 
     def _process_request(self, form):
-        incidents_only = form.getfirst(INCIDENTS_ONLY).value
+        incidents_only = form.getfirst(INCIDENTS_ONLY)
         incidents_only = _parse_boolean(incidents_only)
 
         request_url = "{0}/{1}".format(BASE_URL, LINE_STATUS)
@@ -219,7 +280,7 @@ class LineStatusQuery(BaseQuery):
         return request_url
 
     def _make_filename(self, form):
-        incidents_only = form.getfirst(INCIDENTS_ONLY).value
+        incidents_only = form.getfirst(INCIDENTS_ONLY)
         incidents_only = _parse_boolean(incidents_only)
 
         cache_filename = os.path.join('.', BASE_FILE, self.query,
@@ -240,7 +301,7 @@ class StationStatusQuery(BaseQuery):
         super(StationStatusQuery, self).__init__(form)
 
     def _process_request(self, form):
-        incidents_only = form.getfirst(INCIDENTS_ONLY).value
+        incidents_only = form.getfirst(INCIDENTS_ONLY)
         incidents_only = _parse_boolean(incidents_only)
 
         request_url = "{0}/{1}".format(BASE_URL, STATION_STATUS)
@@ -249,7 +310,7 @@ class StationStatusQuery(BaseQuery):
         return request_url
 
     def _make_filename(self, form):
-        incidents_only = form.getfirst(INCIDENTS_ONLY).value
+        incidents_only = form.getfirst(INCIDENTS_ONLY)
         incidents_only = _parse_boolean(incidents_only)
 
         cache_filename = os.path.join('.', BASE_FILE, self.query,
