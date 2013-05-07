@@ -3,13 +3,12 @@
 from __future__ import print_function
 
 from datetime import datetime
-import cgi
-import cgitb
+from status import StatusCodes, RequestError, ResponseError
+from wsgiref.handlers import CGIHandler
 import query
-import status
-
-# cgitb.enable()
-cgitb.enable(display=1)
+import types
+import urlparse
+import logging
 
 # Queries for parse_args
 QUERIES = {
@@ -20,41 +19,83 @@ QUERIES = {
     query.STATIONS_LIST:        query.StationListQuery
 }
 
-def parse_query(form):
-    request = form.getfirst(query.REQUEST)
-    if request:
-        start_time = datetime.now()
-        query_class = QUERIES.get(request)
+SEQUENCES_TYPE = (set, dict, list, tuple)
 
-        if query_class:
-            query_inst = query_class(form)
-            return query_inst
-        else:
-            raise status.RequestError(status.StatusCodes.HTTP_BAD_REQUEST,
-                                      "Invalid request '{}'".format(request))
-    else:
-        raise status.RequestError(status.StatusCodes.HTTP_BAD_REQUEST,
-                                  "Invalid empty request")
+def parse_query(environ):
+    form = {}
+    query_string = environ['QUERY_STRING'].lower()
+    query_params = urlparse.parse_qs(query_string)
+    query_class = None
 
-def print_big(content, buffersize=8192):
-    content = str(content)
-
-    for l in range(0, len(content) + 1, buffersize):
-        print(content[l:l + buffersize], end='')
-
-def main():
+    # Resolve the query class to instantiate and return
     try:
-        form = cgi.FieldStorage()
-        req = parse_query(form)
-        resp = req.fetch()
+        # Falls back to an empty list so the exception handler catches it
+        request = query_params.get(query.REQUEST, [])[0]
+        query_class = QUERIES[request]
+    except KeyError as ke:
+        raise RequestError(StatusCodes.HTTP_BAD_REQUEST,
+                           "Invalid request '{}'".format(ke.message)
+                           if ke.message else "Empty request")
+    except IndexError as ie:
+        raise RequestError(StatusCodes.HTTP_BAD_REQUEST, "Empty request")
 
-        print_big("Content-Type: application/json\n\n" + resp)
-    except (status.RequestError, status.ResponseError) as re:
-        print_big("Content-Type: text/html\n" + re.httpheader + "\n")
-        if re.canhavebody and re.message:
-            print_big(re.message)
+    # Resolve the parameters that exist
+    try:
+        for param in query_class.params:
+            form[param] = query_params[param][0]
+    except KeyError as ke:
+        raise RequestError(StatusCodes.HTTP_BAD_REQUEST,
+                           "Missing parameter '{}'".format(ke.message))
+
+    logging.info('Request: %s', form)
+    query_instance = query_class(form)
+    return query_instance
+
+def main(environ, start_response):
+    logging.basicConfig(filename='tfl.py.log', level=logging.DEBUG,
+        format='%(asctime)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+
+    status_code = StatusCodes.gethttpstatus(StatusCodes.HTTP_INTERNAL_SERVER_ERROR)
+    response_headers = [("Content-Type", "application/json; charset=UTF-8")]
+    response_body = []
+
+    start_time = datetime.now()
+
+    try:
+        req = parse_query(environ)
+        response_body = req.fetch()
+        status_code = StatusCodes.gethttpstatus(StatusCodes.HTTP_OK)
+    except (RequestError, ResponseError) as re:
+        if re.status.iserror:
+            logging.exception('Error in request or response')
+        status_code = re.httpstatus
+        response_body = re.message if re.status.canhavebody else ''
     except Exception as e:
-        cgitb.handler()
+        logging.exception('Unknown exception processing request')
+
+    end_time = datetime.now()
+
+    try:
+        # Make sure we're passing a sensible sequence
+        if not isinstance(response_body, SEQUENCES_TYPE):
+            response_body = [response_body]
+
+        # Make sure all elements of body are strings and total the length
+        content_length = 0
+        for elem in response_body:
+            if not isinstance(elem, types.StringTypes):
+                elem = str(elem)
+            content_length += len(elem)
+        response_headers.append(("Content-Length", str(content_length)))
+
+        logging.info('Response: %s; Start time: %s; End time: %s',
+                     status_code, start_time, end_time)
+        start_response(status_code, response_headers)
+        return response_body
+    except Exception as e:
+        logging.exception('Unknown exception sending response')
+    finally:
+        logging.shutdown()
 
 if __name__ == '__main__':
-    main()
+    CGIHandler().run(main)

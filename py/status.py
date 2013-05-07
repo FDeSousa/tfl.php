@@ -102,6 +102,12 @@ class StatusCodes(object):
         header = 'HTTP/1.1 {0.code} {0.message}'.format(statuscode)
         return header
 
+    @classmethod
+    def gethttpstatus(cls, code):
+        statuscode = cls.getstatuscode(code)
+        http_status = '{0.code} {0.message}'.format(statuscode)
+        return http_status
+
 
 # Exceptions
 class BaseStatusError(Exception):
@@ -109,7 +115,8 @@ class BaseStatusError(Exception):
         self.status = (StatusCodes.getstatuscode(status)
                        or StatusCodes.HTTP_BAD_REQUEST)
         self.httpheader = StatusCodes.gethttpheader(self.status)
-        self.message = (message or self.httpheader)
+        self.httpstatus = StatusCodes.gethttpstatus(self.status)
+        self.message = message if self.status.canhavebody else None
 
 
 class RequestError(BaseStatusError):
