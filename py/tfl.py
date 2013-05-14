@@ -23,10 +23,29 @@ SEQUENCES_TYPE = (set, dict, list, tuple)
 
 def parse_query(environ):
     form = {}
-    query_string = environ['QUERY_STRING'].lower()
-    query_params = urlparse.parse_qs(query_string)
     query_class = None
+    query_string = ''
 
+    content_length = int(environ.get('CONTENT_LENGTH', 0))
+    request_method = environ['REQUEST_METHOD']
+
+    if request_method == 'GET':
+        query_string = environ['QUERY_STRING'].lower()
+    # elif request_method == 'POST':
+    #     wsgi_input = environ['wsgi.input']
+    #     request  = environ['wsgi.input'].read()
+    #     read_s = wsgi_input.read()
+    #     decoded = read_s.decode()
+    #     logging.info('WSGI input: %s; Read line: %s; Decoded: %s',
+    #         wsgi_input, read_s, decoded)
+    #     query_string = decoded.lower()
+    else:
+        raise RequestError(StatusCodes.HTTP_METHOD_NOT_ALLOWED,
+            "Only accept 'GET' method, not {}".format(request_method))
+
+    logging.info('Method: %s; Query string: %s', request_method, query_string)
+
+    query_params = urlparse.parse_qs(query_string)
     # Resolve the query class to instantiate and return
     try:
         # Falls back to an empty list so the exception handler catches it
@@ -34,22 +53,23 @@ def parse_query(environ):
         query_class = QUERIES[request]
     except KeyError as ke:
         raise RequestError(StatusCodes.HTTP_BAD_REQUEST,
-                           "Invalid request '{}'".format(ke.message)
-                           if ke.message else "Empty request")
+            "Invalid request '{}'".format(ke.message)
+            if ke.message else "Empty request")
     except IndexError as ie:
         raise RequestError(StatusCodes.HTTP_BAD_REQUEST, "Empty request")
 
-    # Resolve the parameters that exist
-    try:
-        for param in query_class.params:
+    # Resolve the parameters that exist, leave out all others
+    for param in query_class.params:
+        if param in query_params:
             form[param] = query_params[param][0]
+
+    try:
+        query_instance = query_class(form)
     except KeyError as ke:
         raise RequestError(StatusCodes.HTTP_BAD_REQUEST,
-                           "Missing parameter '{}'".format(ke.message))
+            "Missing non-optional parameter '{}'".format(ke.message))
 
-    logging.info('Request: %s', form)
-    query_instance = query_class(form)
-    return query_instance
+    return (query_instance, form)
 
 def main(environ, start_response):
     logging.basicConfig(filename='tfl.py.log', level=logging.DEBUG,
@@ -58,11 +78,14 @@ def main(environ, start_response):
     status_code = StatusCodes.gethttpstatus(StatusCodes.HTTP_INTERNAL_SERVER_ERROR)
     response_headers = [("Content-Type", "application/json; charset=UTF-8")]
     response_body = []
+    form = None
 
     start_time = datetime.now()
 
+    logging.info('Environ: %s', environ)
+
     try:
-        req = parse_query(environ)
+        req, form = parse_query(environ)
         response_body = req.fetch()
         status_code = StatusCodes.gethttpstatus(StatusCodes.HTTP_OK)
     except (RequestError, ResponseError) as re:
@@ -88,14 +111,17 @@ def main(environ, start_response):
             content_length += len(elem)
         response_headers.append(("Content-Length", str(content_length)))
 
-        logging.info('Response: %s; Start time: %s; End time: %s',
-                     status_code, start_time, end_time)
-        start_response(status_code, response_headers)
-        return response_body
+        logging.info('Request: %s; Response: %s; Start time: %s; End time: %s',
+                     form, status_code, start_time, end_time)
     except Exception as e:
         logging.exception('Unknown exception sending response')
+        status_code = StatusCodes.gethttpstatus(StatusCodes.HTTP_INTERNAL_SERVER_ERROR)
+        response_body = ['']
     finally:
         logging.shutdown()
+
+    start_response(status_code, response_headers)
+    return response_body
 
 if __name__ == '__main__':
     CGIHandler().run(main)
