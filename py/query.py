@@ -371,7 +371,7 @@ class StationListQuery(BaseQuery):
     query = STATIONS_LIST
     cache_expiry_time = 4838400 # Four weeks in seconds
     params = (REQUEST, )
-    tags = {'station_tag': 'S'}
+    tags = SummaryPredictionQuery.tags
     xmlns = SummaryPredictionQuery.xmlns
 
     def __init__(self, form=None):
